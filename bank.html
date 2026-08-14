@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Банк заданий</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .task-text p { margin: 0 0 8px; }
+        .task-text p:last-child { margin-bottom: 0; }
+        .task-text img { max-width: 100%; height: auto; border-radius: 6px; }
+        .task-text ul, .task-text ol { margin: 8px 0; padding-left: 24px; }
+        .task-text blockquote {
+            border-left: 3px solid #d1d5db;
+            margin: 8px 0;
+            padding-left: 12px;
+            color: #6b7280;
+        }
+        .task-text code {
+            background: #f3f4f6;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .task-text pre {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        .task-text table {
+            border-collapse: collapse;
+            width: auto;
+            max-width: 100%;
+            margin: 8px 0;
+            font-size: 14px;
+            table-layout: auto;
+            border: 1px solid #000;
+        }
+        .task-text td, .task-text th {
+            border: 1px solid #000;
+            padding: 4px 8px;
+            min-width: 32px;
+            min-height: 28px;
+            width: auto;
+            white-space: nowrap;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 14px;
+            word-break: break-word;
+        }
+        .task-text th {
+            background: #f3f4f6;
+            font-weight: 600;
+        }
+        .task-text .ql-align-center { text-align: center; }
+        .task-text .ql-align-right { text-align: right; }
+        .task-text .ql-align-justify { text-align: justify; }
+        .task-text .ql-align-left { text-align: left; }
+        .task-text .table-left table { margin-left: 0; margin-right: auto; }
+        .task-text .table-center table { margin-left: auto; margin-right: auto; }
+        .task-text .table-right table { margin-left: auto; margin-right: 0; }
+        .task-text .ql-table-wrap {
+            margin: 10px 0;
+            overflow-x: auto;
+            display: table;
+            max-width: 100%;
+        }
+        .task-text .ql-table-wrap[data-align="center"] { margin-left: auto; margin-right: auto; }
+        .task-text .ql-table-wrap[data-align="right"] { margin-left: auto; margin-right: 0; }
+        .task-text .ql-table-wrap[data-align="left"] { margin-left: 0; margin-right: auto; }
+        .task-text .ql-table-del { display: none !important; }
+        .add-link {
+            display: inline-block;
+            margin-left: 16px;
+            background: #2563eb;
+            color: #fff;
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .add-link:hover { background: #1d4ed8; }
+        .title-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .title-row h1 { margin-bottom: 0; }
+
+        .filters-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+            padding: 14px 16px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+        .type-edit-panel {
+            margin-bottom: 24px;
+            padding: 14px 16px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+        .type-edit-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        .type-edit-fields label {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .type-edit-fields input {
+            padding: 9px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            min-width: 80px;
+        }
+        .type-edit-fields input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+        .type-edit-name {
+            flex: 1;
+            min-width: 200px;
+        }
+        .type-edit-name input {
+            width: 100%;
+        }
+        .type-edit-hint {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        /* Поиск с кнопкой */
+        .search-box {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+            min-width: 200px;
+            max-width: 420px;
+        }
+        .search-box input {
+            flex: 1;
+            width: auto;
+        }
+        .btn-search {
+            padding: 10px 16px;
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+        .btn-search:hover {
+            background: #1d4ed8;
+        }
+    </style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+    <main class="tasks-container">
+        <a href="index.html" class="back-link">← На главную</a>
+        <div class="title-row">
+            <h1>Банк заданий</h1>
+            <a href="add.html" class="add-link">+ Добавить задание</a>
+        </div>
+
+        <div class="filters-row">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Поиск по № задания (например 15)..." autocomplete="off">
+                <button type="button" class="btn-search" id="btnSearch">Найти</button>
+            </div>
+            <div class="dropdown-box">
+                <label for="taskNumberSelect">Задание:</label>
+                <select id="taskNumberSelect">
+                    <option value="all">Все</option>
+                </select>
+            </div>
+        </div>
+        <div class="type-edit-panel" id="typeEditPanel" hidden>
+            <div class="type-edit-fields">
+                <label>
+                    <span>Номер</span>
+                    <input type="number" id="editTypeNumber" min="1" placeholder="№">
+                </label>
+                <label class="type-edit-name">
+                    <span>Название</span>
+                    <input type="text" id="editTypeName" placeholder="Название задания">
+                </label>
+                <button type="button" class="btn-search" id="btnSaveType">Сохранить</button>
+            </div>
+            <p class="type-edit-hint">Изменение номера обновит все задания этого типа</p>
+        </div>
+
+        <div id="tasksList" class="tasks-list"></div>
+        <p id="noResults" class="no-results" hidden>Задания не найдены</p>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="firebase-db.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
