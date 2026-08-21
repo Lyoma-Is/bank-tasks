@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Раздел</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="tasks-container home-page">
+  <h1 id="examTitle" style="margin:0 0 20px;font-size:1.75rem">Информатика</h1>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:28px">
+    <a href="index.html" class="home-logo" title="На главную"><img src="oge.jpg" alt="ЕГЭ/ОГЭ"></a>
+    <a href="#" id="bankLink" class="btn-bank">Банк заданий</a>
+    <a href="#" id="genLink" class="btn-bank" style="background:#059669">Сгенерировать вариант</a>
+    <a href="#" id="practiceLink" class="btn-bank" style="background:#7c3aed">Сгенерировать задания</a>
+  </div>
+</main>
+<script>
+(function(){
+  const params = new URLSearchParams(location.search);
+  let exam = (params.get('exam') || '').toLowerCase();
+  if (exam !== 'oge' && exam !== 'ege') exam = 'ege';
+  try { sessionStorage.setItem('bank_exam', exam); } catch(e){}
+  const titles = { oge: 'Информатика ОГЭ', ege: 'Информатика ЕГЭ' };
+  document.getElementById('examTitle').textContent = titles[exam];
+  document.title = titles[exam];
+  document.getElementById('bankLink').href = 'bank.html?exam=' + exam;
+  document.getElementById('genLink').href = 'generate.html?exam=' + exam + '&mode=variant';
+  document.getElementById('genLink').addEventListener('click', function() {
+    try {
+      sessionStorage.removeItem(exam + '_gen_types');
+      sessionStorage.removeItem(exam + '_gen_count');
+      sessionStorage.removeItem('oge_gen_types');
+      sessionStorage.removeItem('oge_gen_count');
+    } catch(e){}
+  });
+  document.getElementById('practiceLink').href = 'generate.html?exam=' + exam + '&mode=practice';
+})();
+</script>
+<script src="auth.js"></script>
+</body>
+</html>

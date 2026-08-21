@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Добавить задание</title>
+<link rel="stylesheet" href="styles.css">
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+<style>
+.add-form{max-width:100%;margin:0;padding:0 0 40px}
+.add-toolbar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-weight:600;margin-bottom:6px;font-size:14px;color:#374151}
+.form-group input[type=text],.form-group input[type=number]{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:15px;outline:none}
+.form-group input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.quill-wrap{background:#fff;border:1px solid #d1d5db;border-radius:8px;overflow:visible}
+.quill-wrap:focus-within{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.quill-wrap .ql-toolbar.ql-snow{border:none;border-bottom:1px solid #e5e7eb;border-radius:8px 8px 0 0;background:#f9fafb;flex-wrap:wrap}
+.quill-wrap .ql-container.ql-snow{border:none;border-radius:0 0 8px 8px;font-size:15px;min-height:200px}
+.quill-wrap .ql-editor{min-height:200px}
+.quill-solution .ql-editor{min-height:140px}
+#solutionEditor + .ql-editor, .quill-wrap:has(#solutionEditor) .ql-editor{min-height:140px}
+#solutionWrap .ql-editor{min-height:140px !important}
+.quill-wrap .ql-editor table{border-collapse:collapse;width:auto;max-width:100%;margin:8px 0;border:1px solid #000}
+.quill-wrap .ql-editor table td,.quill-wrap .ql-editor table th{border:1px solid #000;padding:4px 8px;min-width:32px;min-height:28px;vertical-align:middle;text-align:center;font-size:14px;word-break:break-word}
+.quill-wrap .ql-editor .ql-table-wrap{margin:10px 0;overflow-x:auto;display:table;max-width:100%;position:relative}
+.quill-wrap .ql-editor .ql-table-wrap[data-align=center]{margin-left:auto;margin-right:auto}
+.quill-wrap .ql-editor .ql-table-wrap[data-align=right]{margin-left:auto;margin-right:0}
+.quill-wrap .ql-editor .ql-table-wrap[data-align=left]{margin-left:0;margin-right:auto}
+.quill-wrap .ql-editor .ql-table-wrap .ql-table-del{position:absolute;top:-10px;right:-10px;z-index:2;width:26px;height:26px;border-radius:50%;border:2px solid #b91c1c;background:#fff;color:#b91c1c;font-weight:700;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.quill-wrap .ql-editor .ql-table-wrap .ql-table-del:hover{background:#b91c1c;color:#fff}
+.form-actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+.btn{padding:10px 20px;border-radius:8px;font-weight:600;font-size:15px;cursor:pointer;border:none}
+.btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8}
+.btn-secondary{background:#f3f4f6;color:#374151;border:1px solid #d1d5db}
+.btn-danger{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
+.btn-sm{padding:6px 12px;font-size:13px}
+.message{padding:12px 16px;border-radius:8px;margin-bottom:20px;font-size:14px;display:none}
+.message.success{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;display:block}
+.message.error{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;display:block}
+.local-count{font-size:13px;color:#6b7280;margin-top:8px}
+.answer-type{display:flex;gap:16px;margin-bottom:12px}
+.answer-type label{display:flex;align-items:center;gap:6px;font-weight:500;cursor:pointer;font-size:14px}
+.answer-type input{width:auto}
+.answer-table-wrap{overflow-x:auto;border:1px solid #d1d5db;border-radius:8px;background:#fff}
+.answer-table{border-collapse:collapse;width:auto}
+.answer-table th,.answer-table td{border:1px solid #e5e7eb;padding:0}
+.answer-table th{background:#f9fafb;font-size:12px;color:#6b7280;padding:4px 6px;text-align:center}
+.answer-table input{width:100%;border:none;padding:4px 6px;font-size:14px;outline:none;min-width:28px;box-sizing:border-box}
+.table-controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.modal-backdrop{position:fixed;inset:0;background:rgba(34,49,74,.35);display:none;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.modal-backdrop.open{display:flex}
+.modal{background:#fff;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.15);padding:22px 24px;width:100%;max-width:400px}
+.modal h3{margin:0 0 14px;font-size:1.1rem}
+.modal .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.modal .row-fields{display:flex;gap:12px}
+.modal .row-fields label{flex:1}
+.modal input[type=number],.modal input[type=color]{font-size:.98rem;border:1px solid #d1d5db;border-radius:6px;padding:8px;width:100%;outline:none}
+.modal .check-row{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:.9rem;font-weight:500}
+.modal .lbl{display:block;font-size:.82rem;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.align-options{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.align-options label{display:flex;align-items:center;gap:4px;font-weight:500;font-size:13px;cursor:pointer;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb}
+.align-options input{width:auto;margin:0}
+.align-options label:has(input:checked){border-color:#2563eb;background:#eff6ff;color:#1d4ed8}
+@media(max-width:600px){.form-row{grid-template-columns:1fr}}
+.file-upload-box{border:1px dashed #d1d5db;border-radius:8px;padding:12px;background:#f9fafb}
+.file-upload-box input[type=file]{font-size:14px;width:100%}
+.files-list{list-style:none;margin:10px 0 0;padding:0}
+.files-list li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:6px;font-size:13px}
+.files-list li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.files-list .file-remove{border:none;background:#fee2e2;color:#b91c1c;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px;font-weight:600}
+.files-list .file-remove:hover{background:#fecaca}
+</style>
+
+<script>
+
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<main class="tasks-container add-page">
+<div class="home-toolbar add-toolbar">
+<a href="bank.html" id="backBank" class="btn-bank" style="background:#6b7280">← К заданиям</a>
+<a href="index.html" class="home-logo" title="На главную"><img src="oge.jpg" alt="ЕГЭ/ОГЭ"></a>
+</div>
+<div class="add-form">
+<h1 style="margin-bottom:8px" id="addTitle">Добавить задание</h1>
+
+<div id="message" class="message"></div>
+<form id="taskForm">
+<div class="form-row">
+<div class="form-group"><label for="taskNumber">Номер типа *</label>
+<input type="text" id="taskNumber" list="listNumbers" placeholder="выберите или введите: 1, 13.1, 19-21…" required autocomplete="off">
+<datalist id="listNumbers"></datalist></div>
+<div class="form-group"><label for="taskTypeName">Название типа</label>
+<input type="text" id="taskTypeName" list="listTypeNames" placeholder="выберите или введите название" autocomplete="off">
+<datalist id="listTypeNames"></datalist></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label for="taskSubtype">Подтип задания</label>
+<input type="text" id="taskSubtype" list="listSubtypes" placeholder="выберите или введите подтип" autocomplete="off">
+<datalist id="listSubtypes"></datalist></div>
+<div class="form-group"><label for="taskTitle">Автор</label>
+<input type="text" id="taskTitle" list="listAuthors" placeholder="выберите или введите автора" autocomplete="off">
+<datalist id="listAuthors"></datalist></div>
+</div>
+<div class="form-row code-row">
+<div class="form-group code-with-colors">
+<label for="taskCode">Уникальный код</label>
+<div class="code-input-line">
+<input type="text" id="taskCode" placeholder="например 301FE5">
+<input type="hidden" id="taskCodeColor" value="fipi">
+<div class="color-swatches" id="colorSwatches" role="group" aria-label="Цвет кода">
+<button type="button" class="color-swatch active" data-color="fipi" title="Светло-зелёный" style="background:#86efac"></button>
+<button type="button" class="color-swatch" data-color="reshu" title="Светло-оранжевый" style="background:#fdba74"></button>
+<button type="button" class="color-swatch" data-color="kompege" title="Синий" style="background:#60a5fa"></button>
+<button type="button" class="color-swatch" data-color="outdated" title="Светло-красный" style="background:#fca5a5"></button>
+<button type="button" class="color-swatch" data-color="other" title="Серый" style="background:#9ca3af"></button>
+</div>
+</div>
+</div>
+<div class="form-group">
+<label for="taskDifficulty">Сложность *</label>
+<select id="taskDifficulty" required style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:15px;outline:none;background:#fff;">
+<option value="basic" selected>Базовый</option>
+<option value="medium">Средний</option>
+<option value="hard">Сложный</option>
+<option value="coffin">Гроб</option>
+</select>
+</div>
+</div>
+<style>
+.code-input-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.code-input-line input[type=text]{flex:1;min-width:140px}
+.color-swatches{display:flex;gap:8px;align-items:center}
+.color-swatch{
+  width:28px;height:28px;border-radius:50%;border:2px solid transparent;
+  cursor:pointer;padding:0;box-shadow:0 0 0 1px rgba(0,0,0,.12);
+  transition:transform .15s,box-shadow .15s;
+}
+.color-swatch:hover{transform:scale(1.08)}
+.color-swatch.active{box-shadow:0 0 0 2px #fff,0 0 0 4px #2563eb;border-color:#fff}
+.file-upload-box{border:1px dashed #d1d5db;border-radius:8px;padding:12px;background:#f9fafb}
+.file-upload-box input[type=file]{font-size:14px;width:100%}
+.files-list{list-style:none;margin:10px 0 0;padding:0}
+.files-list li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:6px;font-size:13px}
+.files-list li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.files-list .file-remove{border:none;background:#fee2e2;color:#b91c1c;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px;font-weight:600}
+.files-list .file-remove:hover{background:#fecaca}
+</style>
+<div class="form-group"><label>Текст задания *</label>
+<p style="font-size:13px;color:#6b7280;margin:0 0 8px">Формулы: <code>$x^2$</code> в строке или <code>$$\\frac{a}{b}$$</code> отдельно</p>
+<div class="quill-wrap"><div id="editor"></div></div></div>
+<div class="form-group">
+<label>Файлы к заданию</label>
+<p style="font-size:13px;color:#6b7280;margin:0 0 8px">Изображения, PDF и документы (до 2 МБ каждый)</p>
+<div class="file-upload-box">
+<input type="file" id="taskFiles" multiple accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx">
+<ul id="filesList" class="files-list"></ul>
+</div>
+</div>
+<div class="form-group"><label>Ответ</label>
+<div class="answer-type">
+<label><input type="radio" name="answerType" value="text" checked> Текстовый</label>
+<label><input type="radio" name="answerType" value="table"> Табличный</label>
+</div>
+<div id="answerTextBlock"><textarea id="taskAnswer" rows="4" placeholder="Правильный ответ" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:15px;outline:none;resize:vertical;font-family:inherit;line-height:1.45"></textarea></div>
+<div id="answerTableBlock" style="display:none">
+<div class="answer-table-wrap"><table class="answer-table">
+<thead><tr id="tableHeader"></tr></thead><tbody id="tableBody"></tbody></table></div>
+<div class="table-controls">
+<button type="button" class="btn btn-secondary btn-sm" id="btnAddRow">+ Строка</button>
+<button type="button" class="btn btn-secondary btn-sm" id="btnAddCol">+ Столбец</button>
+<button type="button" class="btn btn-danger btn-sm" id="btnRemoveRow">− Строка</button>
+<button type="button" class="btn btn-danger btn-sm" id="btnRemoveCol">− Столбец</button>
+</div></div></div>
+<div class="form-group">
+<label>Решение (необязательно)</label>
+<p style="font-size:13px;color:#6b7280;margin:0 0 8px">Показывается вместе с ответом по кнопке «Показать ответ»</p>
+<div class="quill-wrap quill-solution"><div id="solutionEditor"></div></div>
+</div>
+<div class="form-actions">
+<button type="submit" class="btn btn-primary">Добавить задание</button>
+<button type="button" class="btn btn-secondary" id="btnClear">Очистить форму</button>
+<button type="button" class="btn btn-danger" id="btnClearAll">Удалить все добавленные</button>
+</div>
+<p class="local-count" id="localCount"></p>
+</form>
+</div>
+</main>
+<div class="modal-backdrop" id="tableModal">
+<div class="modal">
+<h3 id="modalTitle">Вставить таблицу</h3>
+<div id="sizeFields" class="row-fields">
+<label><span class="lbl">Строки</span><input type="number" id="modalRows" min="1" max="20" value="3"></label>
+<label><span class="lbl">Столбцы</span><input type="number" id="modalCols" min="1" max="12" value="3"></label>
+</div>
+<div class="row-fields" style="margin-top:12px">
+<label><span class="lbl">1-я строка</span><input type="color" id="tblColorRow" value="#DBEAFE">
+<label class="check-row"><input type="checkbox" id="tblColorRowOn" checked> вкл.</label></label>
+<label><span class="lbl">1-й столбец</span><input type="color" id="tblColorCol" value="#DBEAFE">
+<label class="check-row"><input type="checkbox" id="tblColorColOn"> вкл.</label></label>
+<label><span class="lbl">Диагональ</span><input type="color" id="tblColorDiag" value="#FDE68A">
+<label class="check-row"><input type="checkbox" id="tblColorDiagOn"> вкл.</label></label>
+</div>
+<div class="form-group" style="margin-top:14px" id="alignBlock">
+<span class="lbl">Выравнивание</span>
+<div class="align-options">
+<label><input type="radio" name="tableAlign" value="left"> Слева</label>
+<label><input type="radio" name="tableAlign" value="center" checked> По центру</label>
+<label><input type="radio" name="tableAlign" value="right"> Справа</label>
+</div></div>
+<div class="modal-actions">
+<button type="button" class="btn btn-secondary" id="modalCancel">Отмена</button>
+<button type="button" class="btn btn-primary" id="modalOk">Вставить</button>
+</div></div></div>
+<script>
+(function(){
+  var p = new URLSearchParams(location.search).get('exam');
+  var exam = (p === 'oge' || p === 'ege') ? p : (sessionStorage.getItem('bank_exam') || 'ege');
+  if (exam !== 'oge' && exam !== 'ege') exam = 'ege';
+  try { sessionStorage.setItem('bank_exam', exam); } catch(e){}
+  if (!p) {
+    var u = new URL(location.href);
+    u.searchParams.set('exam', exam);
+    history.replaceState(null, '', u);
+  }
+  window.__BANK_EXAM__ = exam;
+  document.addEventListener('DOMContentLoaded', function(){
+    var back = document.getElementById('backBank');
+    if (back) back.href = 'bank.html?exam=' + exam;
+    var title = document.getElementById('addTitle');
+    if (title) title.textContent = exam === 'oge' ? 'Добавить задание (ОГЭ)' : 'Добавить задание (ЕГЭ)';
+});
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+<script>
+if(typeof Quill==='undefined'){
+  document.write('<script src="https://unpkg.com/quill@2.0.3/dist/quill.js"><\/script>');
+}
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="auth.js"></script>
+<script>
+(function(){
+  if (typeof BankAuth === 'undefined' || !BankAuth.isAdmin()) {
+    var next = 'add.html' + (location.search || '');
+    location.href = 'admin.html?next=' + encodeURIComponent(next);
+  }
+})();
+</script>
+<script src="firebase-db.js"></script>
+<script src="add-quill.js"></script>
+</body>
+</html>
