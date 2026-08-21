@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная — Банк заданий</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .exam-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 28px;
+        }
+        .btn-exam {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            background: #2563eb;
+            color: #fff;
+            text-decoration: none;
+            padding: 16px 28px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 17px;
+            transition: background 0.2s, transform 0.15s;
+            box-shadow: 0 2px 8px rgba(37,99,235,.25);
+        }
+        .btn-exam:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+        .btn-exam.oge { background: #059669; box-shadow: 0 2px 8px rgba(5,150,105,.25); }
+        .btn-exam.oge:hover { background: #047857; }
+        .btn-exam.ege { background: #7c3aed; box-shadow: 0 2px 8px rgba(124,58,237,.25); }
+        .btn-exam.ege:hover { background: #6d28d9; }
+    .home-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            line-height: 1.3;
+        }
+        @media (max-width: 520px) {
+            .home-title { font-size: 1.05rem; }
+        }
+        </style>
+</head>
+<body>
+    <main class="tasks-container home-page">
+        <div class="home-toolbar" style="margin-bottom:24px;display:flex;align-items:center;gap:14px">
+            <a href="index.html" class="home-logo" title="Главная"><img src="oge.jpg" alt="ЕГЭ/ОГЭ"></a>
+            <span class="home-title">Подготовка к ОГЭ / ЕГЭ по информатике</span>
+        </div>
+        <div class="home-content">
+            <div class="exam-buttons">
+                <a href="subject.html?exam=oge" class="btn-exam oge">Информатика ОГЭ</a>
+                <a href="subject.html?exam=ege" class="btn-exam ege">Информатика ЕГЭ</a>
+            </div>
+        </div>
+    </main>
+<script src="auth.js"></script>
+</body>
+</html>

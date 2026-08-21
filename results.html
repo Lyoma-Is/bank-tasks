@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Результаты варианта</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+.results-page { max-width: 900px; margin: 0 auto; padding: 20px 16px 40px; }
+.variant-code-head {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 8px 0 20px;
+}
+.exam-results-block {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin: 12px 0 24px;
+}
+.exam-results-block .answered {
+  font-size: 1rem;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+.exam-results-block .exam-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 10px;
+}
+.exam-results-block .secondary-big {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 8px;
+  line-height: 1.2;
+}
+.exam-results-block .primary-line {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0;
+}
+.results-score {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 16px 0 12px;
+  color: #111827;
+}
+.primary-score {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0 0 20px;
+}
+.primary-score.score-fail, .secondary-big.score-fail, .primary-line.score-fail { color: #dc2626; }
+.primary-score.score-pass-low, .secondary-big.score-pass-low, .primary-line.score-pass-low { color: #ca8a04; } /* жёлтый */
+.primary-score.score-pass, .secondary-big.score-pass, .primary-line.score-pass { color: #111827; }
+.primary-score.score-high, .secondary-big.score-high, .primary-line.score-high { color: #059669; }
+.results-table .ans-partial {
+  background: #fef9c3;
+  color: #a16207;
+  font-weight: 600;
+}
+.results-table {
+  width: max-content;
+  max-width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  table-layout: auto;
+  margin: 0 auto;
+}
+.results-table th,
+.results-table td {
+  border: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  text-align: center;
+  vertical-align: middle;
+  white-space: pre-wrap;
+  width: 1%;
+  white-space: nowrap;
+}
+.results-table th {
+  background: #f9fafb;
+  font-weight: 700;
+  color: #374151;
+}
+.results-table td {
+  white-space: pre-wrap;
+  width: auto;
+}
+.results-table .num-link {
+  color: #2563eb;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+  background: none;
+  font: inherit;
+  padding: 0;
+}
+.results-table .num-link:hover { text-decoration: underline; }
+.results-table .ans-ok {
+  background: #d1fae5;
+  color: #065f46;
+  font-weight: 600;
+}
+.results-table .ans-bad {
+  background: #fee2e2;
+  color: #991b1b;
+  font-weight: 600;
+}
+.results-table .ans-empty { color: #9ca3af; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<main class="results-page">
+  <div class="toolbar">
+    <a href="index.html" class="home-logo" title="На главную"><img src="oge.jpg" alt="ЕГЭ/ОГЭ"></a>
+    <a href="#" id="backGen" class="btn-bank">← К варианту</a>
+  </div>
+  <h1 id="title">Результаты</h1>
+  <div id="content"></div>
+</main>
+<script>
+(function(){
+  const params = new URLSearchParams(location.search);
+  let exam = (params.get('exam') || '').toLowerCase();
+  if (exam !== 'oge' && exam !== 'ege') {
+    try { exam = sessionStorage.getItem('bank_exam') || 'ege'; } catch(e) { exam = 'ege'; }
+  }
+  try { sessionStorage.setItem('bank_exam', exam); } catch(e){}
+
+  document.getElementById('backGen').href = 'generate.html?exam=' + exam + '&restore=1';
+  document.getElementById('title').textContent =
+    exam === 'oge' ? 'Результаты — Информатика ОГЭ' : 'Результаты — Информатика ЕГЭ';
+  document.title = document.getElementById('title').textContent;
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  let data = null;
+  try {
+    data = JSON.parse(sessionStorage.getItem('bank_variant_results') || 'null');
+  } catch(e) { data = null; }
+
+  const box = document.getElementById('content');
+  if (!data || !data.rows || !data.rows.length) {
+    box.innerHTML = '<p style="color:#6b7280">Нет данных результата. Сгенерируйте вариант и нажмите «Завершить».</p>';
+    return;
+  }
+
+  const rows = data.rows.map(r => {
+    let userCell;
+    if (r.status === null) userCell = '<td class="ans-empty"></td>';
+    else if (r.status === true || r.status === 'ok') userCell = '<td class="ans-ok">' + escapeHtml(r.user) + '</td>';
+    else if (r.status === 'partial') userCell = '<td class="ans-partial">' + escapeHtml(r.user) + '</td>';
+    else userCell = '<td class="ans-bad">' + escapeHtml(r.user) + '</td>';
+    return '<tr>' +
+      '<td><button type="button" class="num-link" data-slot="' + escapeHtml(r.slot) + '">' + escapeHtml(r.slot) + '</button></td>' +
+      userCell +
+      '<td>' + escapeHtml(r.correct) + '</td>' +
+    '</tr>';
+  }).join('');
+
+  const primary = data.primary != null ? data.primary : data.correct;
+  const primaryMaxOfficial = exam === 'ege' ? 29 : 21;
+  const tasksTotal = exam === 'ege' ? 27 : 17;
+
+  const EGE_INFO_SECONDARY = [
+    0, 7, 14, 20, 27, 34, 40, 42, 44, 46,
+    48, 50, 52, 54, 56, 58, 60, 62, 64, 66,
+    68, 70, 72, 74, 76, 78, 80, 82, 84, 100
+  ];
+  function primaryToSecondary(p) {
+    const n = Math.max(0, Math.min(29, Math.round(Number(p) || 0)));
+    return EGE_INFO_SECONDARY[n];
+  }
+
+  let scoreClass = 'score-pass';
+  let passLabel = 'сдан';
+  if (exam === 'ege') {
+    if (primary < 6) { scoreClass = 'score-fail'; passLabel = 'не сдан'; }
+    else if (primary <= 7) { scoreClass = 'score-pass-low'; passLabel = 'сдан'; }
+    else if (primary <= 20) { scoreClass = 'score-pass'; passLabel = 'сдан'; }
+    else { scoreClass = 'score-high'; passLabel = 'сдан'; }
+  } else if (exam === 'oge') {
+    if (primary < 6) { scoreClass = 'score-fail'; passLabel = 'не сдан'; }
+    else if (primary <= 10) { scoreClass = 'score-pass-low'; passLabel = 'сдан'; } // жёлтый
+    else { scoreClass = 'score-high'; passLabel = 'сдан'; } // зелёный 11–21
+  }
+
+  // ОГЭ: 13.1 и 13.2 считаются за одно в «Дано ответов»
+  let answered = 0;
+  if (exam === 'oge') {
+    const seen = new Set();
+    (data.rows || []).forEach(r => {
+      if (r.status === null || r.status === undefined) return;
+      let key = String(r.slot);
+      if (key === '13.1' || key === '13.2') key = '13';
+      if (seen.has(key)) return;
+      seen.add(key);
+      answered++;
+    });
+  } else {
+    answered = (data.rows || []).filter(r => r.status !== null && r.status !== undefined).length;
+  }
+
+  let scoreHtml = '';
+  if (exam === 'ege') {
+    const secondary = primaryToSecondary(primary);
+    scoreHtml =
+      '<div class="exam-results-block">' +
+        '<div class="answered">Дано ответов ' + answered + '/' + tasksTotal + '</div>' +
+        '<div class="exam-title">Результаты экзамена</div>' +
+        '<div class="secondary-big ' + scoreClass + '">' + secondary + '/100</div>' +
+        '<div class="primary-line ' + scoreClass + '">Первичный балл: ' + primary + '/' + primaryMaxOfficial + '</div>' +
+      '</div>';
+  } else if (exam === 'oge') {
+    scoreHtml =
+      '<div class="exam-results-block">' +
+        '<div class="answered">Дано ответов ' + answered + '/' + tasksTotal + '</div>' +
+        '<div class="exam-title">Результаты экзамена</div>' +
+        '<div class="secondary-big ' + scoreClass + '">' + passLabel + '</div>' +
+        '<div class="primary-line ' + scoreClass + '">Первичный балл: ' + primary + '/' + primaryMaxOfficial + '</div>' +
+      '</div>';
+  } else {
+    scoreHtml = '<div class="results-score">Результат: ' + data.correct + ' из ' + data.total + '</div>';
+  }
+
+  if (data.variantCode != null && data.variantCode !== '') {
+    scoreHtml += '<div class="variant-code-head">Вариант № ' + data.variantCode + '</div>';
+  }
+
+  box.innerHTML = scoreHtml +
+    '<table class="results-table">' +
+      '<thead><tr><th>Номер</th><th>Ваш ответ</th><th>Правильный ответ</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+    '</table>';
+
+  box.querySelectorAll('.num-link').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const slot = btn.getAttribute('data-slot');
+      location.href = 'generate.html?exam=' + encodeURIComponent(exam) +
+        '&restore=1&slot=' + encodeURIComponent(slot);
+    });
+  });
+})();
+</script>
+<script src="auth.js"></script>
+</body>
+</html>

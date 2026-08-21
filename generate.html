@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Сгенерировать вариант</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+.gen-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+.gen-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  align-items: flex-end;
+}
+.gen-options label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.gen-options select, .gen-options input[type=number] {
+  padding: 9px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  min-width: 140px;
+  background: #fff;
+}
+.variant-list { display: flex; flex-direction: column; gap: 14px; }
+/* Карточки как в банке (.task-card) */
+.variant-card.task-card {
+  /* стили из styles.css .task-card */
+}
+.variant-card .task-text img { max-width: 100%; height: auto; }
+.variant-card .task-text table {
+  border-collapse: collapse;
+  margin: 8px 0;
+}
+.variant-card .task-text td,
+.variant-card .task-text th {
+  border: 1px solid #000;
+  padding: 4px 8px;
+}
+.variant-answer-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed #e5e7eb;
+}
+.variant-answer-wrap .variant-answer-input {
+  order: 1;
+  width: auto;
+  max-width: 100%;
+}
+.variant-answer-wrap .btn-check-answer {
+  order: 2;
+}
+@media (max-width: 640px) {
+  .variant-answer-wrap {
+    align-items: stretch;
+  }
+  .variant-answer-wrap .variant-answer-input {
+    width: 100%;
+  }
+  .variant-answer-wrap .btn-check-answer {
+    width: 100%;
+  }
+  .variant-answer-wrap .variant-answer-input input[type=text] {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .variant-answer-wrap .variant-answer-input table {
+    width: 100%;
+  }
+}
+.btn-check-answer {
+  flex: 0 0 auto;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  height: fit-content;
+}
+.btn-check-answer:hover { background: #1d4ed8; }
+.variant-answer-input.ans-correct input,
+.variant-answer-input.ans-correct input[type=text] {
+  background: #d1fae5 !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16,185,129,.25);
+}
+.variant-answer-input.ans-wrong input,
+.variant-answer-input.ans-wrong input[type=text] {
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239,68,68,.25);
+}
+.variant-answer-input.ans-correct {
+  outline: 2px solid #10b981;
+  border-radius: 8px;
+  padding: 4px;
+}
+.variant-answer-input.ans-wrong {
+  outline: 2px solid #ef4444;
+  border-radius: 8px;
+  padding: 4px;
+}
+.variant-answer-input.ans-correct .variant-checks,
+.variant-answer-input.ans-wrong .variant-checks {
+  padding: 8px;
+  border-radius: 8px;
+}
+.variant-answer-input.ans-correct .variant-checks { background: #d1fae5; }
+.variant-answer-input.ans-wrong .variant-checks { background: #fee2e2; }
+.variant-answer-input {
+  max-width: 100%;
+}
+.variant-answer-input input[type=text] {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  min-width: 120px;
+  outline: none;
+}
+.variant-answer-input input[type=text]:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+}
+.variant-answer-input table {
+  border-collapse: collapse;
+}
+.variant-answer-input td {
+  padding: 4px;
+}
+.variant-answer-input td input {
+  width: 56px;
+  min-width: 48px;
+  text-align: center;
+  padding: 6px 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.variant-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.variant-checks label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  user-select: none;
+}
+.variant-checks input[type=checkbox] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.variant-empty {
+  text-align: center;
+  color: #6b7280;
+  padding: 40px 16px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px dashed #d1d5db;
+}
+.btn-gen {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: #059669;
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.btn-gen:hover { background: #047857; }
+.btn-print {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+.type-select-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+@media (max-width: 640px) {
+  .type-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.type-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+}
+.type-item input { width: 16px; height: 16px; cursor: pointer; }
+.variant-stage {
+  min-height: 280px;
+  margin-bottom: 24px;
+}
+.finish-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 16px;
+}
+.btn-finish {
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.btn-finish:hover { background: #6d28d9; }
+.results-panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+.results-score {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 14px;
+  color: #111827;
+}
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.results-table th,
+.results-table td {
+  border: 1px solid #e5e7eb;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  white-space: pre-wrap;
+}
+.results-table th {
+  background: #f9fafb;
+  font-weight: 700;
+  color: #374151;
+}
+.results-table .ans-ok {
+  background: #d1fae5;
+  color: #065f46;
+  font-weight: 600;
+}
+.results-table .ans-bad {
+  background: #fee2e2;
+  color: #991b1b;
+  font-weight: 600;
+}
+.results-table .ans-empty {
+  color: #9ca3af;
+}
+
+.gen-slider {
+  position: relative;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  padding: 12px 14px 14px;
+  margin: 0 0 20px;
+}
+.gen-slider-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.gen-slider-top label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+}
+.gen-slider-top select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+}
+.slot-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.slot-current {
+  min-width: 72px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 18px;
+  color: #111827;
+  padding: 6px 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+}
+.slot-nav {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #f3f4f6;
+  color: #111827;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.slot-nav:hover { background: #e5e7eb; border-color: #9ca3af; }
+.slot-nav:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.slot-track {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 2px;
+  flex: 1;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.slot-track::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+.slot-btn {
+  flex: 0 0 auto;
+  min-width: 44px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  font-weight: 700;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+}
+.slot-btn:hover { border-color: #2563eb; color: #2563eb; }
+.slot-btn.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+.slot-btn.missing {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+@media print {
+  .gen-toolbar, .gen-slider, .back-link, .no-print { display: none !important; }
+  .type-select-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+@media (max-width: 640px) {
+  .type-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.type-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+}
+.type-item input { width: 16px; height: 16px; cursor: pointer; }
+.variant-stage { margin-bottom: 0; }
+  .variant-card { break-inside: avoid; box-shadow: none; }
+}
+</style>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<main class="tasks-container">
+  <div class="gen-toolbar no-print">
+    <a href="index.html" class="home-logo" title="На главную"><img src="oge.jpg" alt="ЕГЭ/ОГЭ"></a>
+    <a href="#" id="backSubject" class="btn-bank" style="background:#6b7280">← К разделу</a>
+    <a href="#" id="bankLink" class="btn-bank">Банк заданий</a>
+    <button type="button" class="btn-gen" id="btnGenerate">Сгенерировать</button>
+    <button type="button" class="btn-print" id="btnPrint">Печать</button>
+  </div>
+
+  <h1 id="pageTitle" style="margin-bottom:12px">Сгенерировать вариант</h1>
+  <p id="pageHint" style="display:none"></p>
+
+  <div id="practicePanel" class="no-print" hidden>
+    <div class="type-select-bar">
+      <button type="button" class="btn-bank" id="btnSelectAll" style="background:#fff;color:#374151;border:1px solid #d1d5db">Выбрать все</button>
+      <button type="button" class="btn-bank" id="btnClearAll" style="background:#6b7280">Убрать все</button>
+      <input type="number" id="practiceCount" min="1" max="50" value="5" title="Сколько раз каждый тип" style="width:64px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:15px">
+    </div>
+    <div class="type-grid" id="typeGrid"></div>
+    <div style="margin-bottom:16px">
+      <button type="button" class="btn-bank" id="btnGenTasks" style="background:#059669">Сгенерировать задания</button>
+    </div>
+  </div>
+
+  <div class="gen-slider no-print" id="genSlider">
+    <div class="slot-row">
+      <button type="button" class="slot-nav" id="slotPrev" title="Предыдущее" aria-label="Предыдущее">‹</button>
+      <div class="slot-track" id="slotTrack" aria-label="Номера заданий"></div>
+      <button type="button" class="slot-nav" id="slotNext" title="Следующее" aria-label="Следующее">›</button>
+    </div>
+  </div>
+
+  <div id="status" style="color:#6b7280;margin-bottom:12px"></div>
+  <div class="finish-row no-print">
+    <button type="button" class="btn-finish" id="btnFinish">Завершить</button>
+  </div>
+  <div id="resultsPanel" class="results-panel" hidden></div>
+  <div class="variant-stage">
+    <div id="variantList" class="variant-list"></div>
+  </div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="auth.js"></script>
+<script src="firebase-db.js"></script>
+<script>
+(function(){
+  const params = new URLSearchParams(location.search);
+  let exam = (params.get('exam') || '').toLowerCase();
+  if (exam !== 'oge' && exam !== 'ege') exam = sessionStorage.getItem('bank_exam') || 'ege';
+  if (exam !== 'oge' && exam !== 'ege') exam = 'ege';
+  try { sessionStorage.setItem('bank_exam', exam); } catch(e){}
+  if (!params.get('exam')) {
+    const u = new URL(location.href);
+    u.searchParams.set('exam', exam);
+    history.replaceState(null, '', u);
+  }
+  window.__BANK_EXAM__ = exam;
+
+  const urlParams = new URLSearchParams(location.search);
+  // mode=variant — полный вариант; mode=practice — выбранные задания
+  const pageMode = urlParams.get('mode') || 'variant';
+  const practiceMode = pageMode === 'practice';
+
+  const titles = {
+    oge: 'Вариант — Информатика ОГЭ',
+    ege: 'Вариант — Информатика ЕГЭ'
+  };
+  const practiceTitles = {
+    oge: 'Задания — Информатика ОГЭ',
+    ege: 'Задания — Информатика ЕГЭ'
+  };
+  const titleText = practiceMode ? (practiceTitles[exam] || titles[exam]) : titles[exam];
+  document.getElementById('pageTitle').textContent = titleText;
+  document.title = titleText;
+
+  let variantCode = null;
+  function ensureVariantCode(forceNew) {
+    if (practiceMode) return null;
+    if (forceNew || variantCode == null) {
+      variantCode = 1000 + Math.floor(Math.random() * 9000); // 1000–9999
+    }
+    const el = document.getElementById('pageTitle');
+    if (el) {
+      const subj = exam === 'oge' ? 'Информатика ОГЭ' : 'Информатика ЕГЭ';
+      el.textContent = 'Вариант № ' + variantCode + ' — ' + subj;
+      document.title = el.textContent;
+    }
+    return variantCode;
+  }
+  if (!practiceMode) ensureVariantCode(true);
+  document.getElementById('backSubject').href = 'subject.html?exam=' + exam;
+  document.getElementById('backSubject').textContent = exam === 'oge' ? '← Информатика ОГЭ' : '← Информатика ЕГЭ';
+  document.getElementById('bankLink').href = 'bank.html?exam=' + exam;
+  document.getElementById('pageHint').textContent = '';
+  document.getElementById('pageHint').style.display = 'none';
+  let practiceTypes = null;
+  let practiceCount = 5;
+  if (practiceMode) {
+    const TYPE_LIST = exam === 'oge'
+      ? [1,2,3,4,5,6,7,8,9,10,11,12,'13.1','13.2',14,15,16]
+      : Array.from({ length: 27 }, (_, i) => i + 1);
+    const storageTypes = exam + '_gen_types';
+    const storageCount = exam + '_gen_count';
+    const panel = document.getElementById('practicePanel');
+    if (panel) panel.hidden = false;
+    const grid = document.getElementById('typeGrid');
+    const finishRow = document.querySelector('.finish-row');
+    if (finishRow) finishRow.style.display = 'none';
+    const btnFinish = document.getElementById('btnFinish');
+    if (btnFinish) btnFinish.style.display = 'none';
+    const btnGen = document.getElementById('btnGenerate');
+    if (btnGen) btnGen.style.display = 'none';
+
+    let savedTypes = null;
+    try {
+      const ts = urlParams.get('types') || '';
+      if (ts) savedTypes = ts.split(',').map(s => s.trim()).filter(Boolean);
+      else savedTypes = JSON.parse(sessionStorage.getItem(storageTypes) || sessionStorage.getItem('oge_gen_types') || 'null');
+    } catch(e) { savedTypes = null; }
+    const c = parseInt(urlParams.get('count') || sessionStorage.getItem(storageCount) || sessionStorage.getItem('oge_gen_count') || '5', 10);
+    practiceCount = Number.isFinite(c) && c > 0 ? c : 5;
+    const pc = document.getElementById('practiceCount');
+    if (pc) pc.value = practiceCount;
+
+    if (grid) {
+      grid.innerHTML = '';
+      TYPE_LIST.forEach(n => {
+        const label = document.createElement('label');
+        label.className = 'type-item';
+        const checked = !savedTypes || savedTypes.map(String).includes(String(n));
+        label.innerHTML = '<input type="checkbox" value="' + n + '"' + (checked ? ' checked' : '') + '> <span>' + n + '</span>';
+        grid.appendChild(label);
+      });
+    }
+    function allBoxes() { return grid ? [...grid.querySelectorAll('input[type=checkbox]')] : []; }
+    document.getElementById('btnSelectAll').onclick = () => allBoxes().forEach(b => b.checked = true);
+    document.getElementById('btnClearAll').onclick = () => allBoxes().forEach(b => b.checked = false);
+
+    function readPracticeSelection() {
+      const selected = allBoxes().filter(b => b.checked).map(b => b.value);
+      let count = parseInt((document.getElementById('practiceCount') || {}).value, 10);
+      if (!Number.isFinite(count) || count < 1) count = 5;
+      practiceTypes = selected;
+      practiceCount = count;
+      try {
+        sessionStorage.setItem(storageTypes, JSON.stringify(selected));
+        sessionStorage.setItem(storageCount, String(count));
+      } catch(e){}
+      return selected.length > 0;
+    }
+
+    document.getElementById('btnGenTasks').onclick = () => {
+      if (!readPracticeSelection()) {
+        alert('Выберите хотя бы один номер задания');
+        return;
+      }
+      generate();
+    };
+
+    practiceTypes = savedTypes;
+  }
+
+
+  document.getElementById('btnPrint').onclick = () => window.print();
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+  function isHtml(str) {
+    return typeof str === 'string' && /<[a-z][\s\S]*>/i.test(str);
+  }
+  function pickRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  let currentVariant = [];
+  let currentSlotIndex = 0;
+
+  function renderSlotButtons() {
+    const track = document.getElementById('slotTrack');
+    const prevBtn = document.getElementById('slotPrev');
+    const nextBtn = document.getElementById('slotNext');
+    if (!track) return;
+    if (!currentVariant.length) {
+      track.innerHTML = '';
+      if (prevBtn) prevBtn.disabled = true;
+      if (nextBtn) nextBtn.disabled = true;
+      return;
+    }
+    if (prevBtn) prevBtn.disabled = false;
+    if (nextBtn) nextBtn.disabled = false;
+    track.innerHTML = currentVariant.map((t, i) => {
+      const slot = t._slotLabel || String(t.number);
+      const miss = t._missing ? ' missing' : '';
+      const act = i === currentSlotIndex ? ' active' : '';
+      return '<button type="button" class="slot-btn' + act + miss + '" data-index="' + i + '">' +
+        escapeHtml(String(slot)) + '</button>';
+    }).join('');
+    track.querySelectorAll('.slot-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentSlotIndex = Number(btn.getAttribute('data-index')) || 0;
+        showCurrentTask();
+      });
+    });
+    const active = track.querySelector('.slot-btn.active');
+    if (active && active.scrollIntoView) {
+      active.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+    }
+  }
+
+  // ответы пользователя: ключ = уникальный id карточки (слот + индекс)
+  const userAnswers = {};
+  function answerKey(task, slot, index) {
+    const idx = index != null ? index : currentSlotIndex;
+    if (task && task.id) return String(task.id) + '::' + String(slot) + '::' + idx;
+    return String(slot) + '::' + idx;
+  }
+
+  function splitAnswerLines(answer) {
+    return String(answer || '')
+      .replace(/\r\n/g, '\n')
+      .split('\n')
+      .map(l => l.trim())
+      .filter((l, i, arr) => l.length || arr.length === 1);
+  }
+
+  function tokenizeLine(line) {
+    return String(line || '').trim().split(/[\s,;]+/).filter(Boolean);
+  }
+
+  function isMultiNumberLine(line) {
+    return tokenizeLine(line).length > 1;
+  }
+
+  /** Какой «эталон» ответа использовать для слота (19/20/21 — строки) */
+  function getAnswerSpecForSlot(task, slot) {
+    const slotStr = String(slot);
+    const n = parseInt(slotStr, 10);
+    const is1921 = (n === 19 || n === 20 || n === 21);
+
+    // табличный ответ в банке
+    if (task.answerType === 'table' && task.answerTable && task.answerTable.length) {
+      if (is1921) {
+        const rowIndex = n - 19; // 19→0, 20→1, 21→2
+        const row = task.answerTable[rowIndex] || [];
+        const cells = Array.isArray(row) ? row : [row];
+        if (cells.length > 1) return { kind: 'table', rows: 1, cols: cells.length, ref: cells };
+        return { kind: 'text', ref: cells[0] != null ? String(cells[0]) : '' };
+      }
+      const rows = task.answerTable.length;
+      const cols = Math.max.apply(null, task.answerTable.map(r => (Array.isArray(r) ? r.length : 1))) || 1;
+      return { kind: 'table', rows: rows, cols: cols, ref: task.answerTable };
+    }
+
+    // текстовый ответ
+    const lines = splitAnswerLines(task.answer);
+    if (is1921) {
+      const lineIndex = n - 19;
+      const line = lines[lineIndex] != null ? lines[lineIndex] : (lines[0] || '');
+      const tokens = tokenizeLine(line);
+      if (tokens.length > 1) {
+        return { kind: 'table', rows: 1, cols: tokens.length, ref: tokens };
+      }
+      return { kind: 'text', ref: line };
+    }
+
+    // обычное задание: несколько строк с несколькими числами → таблица
+    if (lines.length > 1 || (lines[0] && isMultiNumberLine(lines[0]) && lines.length >= 1 && lines.some(isMultiNumberLine) && lines.length > 1)) {
+      const matrix = lines.map(tokenizeLine);
+      const cols = Math.max.apply(null, matrix.map(r => r.length).concat([1]));
+      if (matrix.some(r => r.length > 1) || matrix.length > 1) {
+        // если одна строка одно число — text
+        if (matrix.length === 1 && matrix[0].length === 1) {
+          return { kind: 'text', ref: matrix[0][0] };
+        }
+        if (matrix.length === 1 && matrix[0].length > 1) {
+          return { kind: 'table', rows: 1, cols: matrix[0].length, ref: matrix[0] };
+        }
+        return { kind: 'table', rows: matrix.length, cols: cols, ref: matrix };
+      }
+    }
+
+    if (lines[0] && isMultiNumberLine(lines[0])) {
+      const tokens = tokenizeLine(lines[0]);
+      return { kind: 'table', rows: 1, cols: tokens.length, ref: tokens };
+    }
+
+    return { kind: 'text', ref: task.answer || '' };
+  }
+
+  function isOgeCheckboxSlot(slot) {
+    const s = String(slot);
+    return exam === 'oge' && (s === '13.1' || s === '13.2' || s === '15' || s === '16');
+  }
+
+  function buildAnswerInputHtml(task, slot, index) {
+    const key = answerKey(task, slot, index);
+    const saved = userAnswers[key];
+
+    // ОГЭ: 13.1, 13.2, 15, 16 — два чекбокса (по номеру слота, не по akey)
+    if (isOgeCheckboxSlot(slot)) {
+      const c1 = !!(saved && saved.checks && saved.checks[0]);
+      const c2 = !!(saved && saved.checks && saved.checks[1]);
+      return '<div class="variant-answer-input" data-kind="checks" data-akey="' + escapeHtml(key) + '" data-slot="' + escapeHtml(String(slot)) + '">' +
+        '<div class="variant-checks">' +
+          '<label><input type="checkbox" data-i="0"' + (c1 ? ' checked' : '') + '> Критерий 1 (1 балл)</label>' +
+          '<label><input type="checkbox" data-i="1"' + (c2 ? ' checked' : '') + '> Критерий 2 (1 балл)</label>' +
+        '</div></div>';
+    }
+
+    const spec = getAnswerSpecForSlot(task, slot);
+
+    if (spec.kind === 'table') {
+      const rows = spec.rows;
+      const cols = spec.cols;
+      let html = '<div class="variant-answer-input" data-kind="table" data-akey="' + escapeHtml(key) + '" data-slot="' + escapeHtml(String(slot)) + '"><table><tbody>';
+      for (let r = 0; r < rows; r++) {
+        html += '<tr>';
+        for (let c = 0; c < cols; c++) {
+          let val = '';
+          if (saved && Array.isArray(saved) && saved[r] && saved[r][c] != null) val = saved[r][c];
+          html += '<td><input type="text" data-r="' + r + '" data-c="' + c + '" value="' + escapeHtml(String(val)) + '" autocomplete="off"></td>';
+        }
+        html += '</tr>';
+      }
+      html += '</tbody></table></div>';
+      return html;
+    }
+
+    const val = (saved != null && typeof saved === 'string') ? saved : '';
+    return '<div class="variant-answer-input" data-kind="text" data-akey="' + escapeHtml(key) + '" data-slot="' + escapeHtml(String(slot)) + '">' +
+      '<input type="text" value="' + escapeHtml(val) + '" placeholder="Ваш ответ" autocomplete="off">' +
+      '</div>';
+  }
+
+  function parsePasteMatrix(text) {
+    return String(text || '')
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .trim()
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .map(line => line.split(/[\s,;\t]+/).filter(Boolean));
+  }
+
+  function bindAnswerPaste() {
+    const wrap = document.querySelector('.variant-answer-input');
+    if (!wrap || wrap._pasteBound) return;
+    wrap._pasteBound = true;
+
+    wrap.addEventListener('paste', function(e) {
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      if (!text || !String(text).trim()) return;
+
+      const raw = String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      const lines = raw.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      const kind = wrap.getAttribute('data-kind');
+      const active = document.activeElement;
+
+      // Одна строка (или один фрагмент) → вставить целиком в текущую ячейку
+      if (lines.length <= 1) {
+        if (kind === 'table' && active && active.tagName === 'INPUT' && wrap.contains(active)) {
+          e.preventDefault();
+          const full = lines[0] || raw.trim();
+          // вставка в позицию курсора
+          const start = active.selectionStart != null ? active.selectionStart : active.value.length;
+          const end = active.selectionEnd != null ? active.selectionEnd : active.value.length;
+          active.value = active.value.slice(0, start) + full + active.value.slice(end);
+          const pos = start + full.length;
+          try { active.setSelectionRange(pos, pos); } catch (err) {}
+          saveCurrentAnswerInputs();
+          return;
+        }
+        // text-поле — стандартная вставка браузера
+        return;
+      }
+
+      // Несколько строк → разложить по ячейкам таблицы
+      const matrix = parsePasteMatrix(text);
+      if (!matrix.length) return;
+
+      e.preventDefault();
+
+      if (kind === 'table') {
+        const cellInputs = wrap.querySelectorAll('input[data-r]');
+        if (!cellInputs.length) return;
+        let maxR = 0, maxC = 0;
+        cellInputs.forEach(inp => {
+          maxR = Math.max(maxR, Number(inp.getAttribute('data-r')) || 0);
+          maxC = Math.max(maxC, Number(inp.getAttribute('data-c')) || 0);
+        });
+        for (let r = 0; r <= maxR; r++) {
+          for (let c = 0; c <= maxC; c++) {
+            const inp = wrap.querySelector('input[data-r="' + r + '"][data-c="' + c + '"]');
+            if (!inp) continue;
+            const val = matrix[r] && matrix[r][c] != null ? matrix[r][c] : '';
+            inp.value = val;
+          }
+        }
+      } else {
+        const inp = (active && wrap.contains(active)) ? active : wrap.querySelector('input');
+        if (inp) {
+          inp.value = matrix.map(row => row.join(' ')).join('\n');
+        }
+      }
+      saveCurrentAnswerInputs();
+    });
+  }
+
+  function saveCurrentAnswerInputs() {
+    const wrap = document.querySelector('.variant-answer-input');
+    if (!wrap) return;
+    const akey = wrap.getAttribute('data-akey') || wrap.getAttribute('data-slot');
+    if (!akey) return;
+    const kind = wrap.getAttribute('data-kind');
+    if (kind === 'checks') {
+      const boxes = wrap.querySelectorAll('input[type=checkbox]');
+      const checks = [false, false];
+      boxes.forEach(b => {
+        const i = Number(b.getAttribute('data-i')) || 0;
+        checks[i] = !!b.checked;
+      });
+      userAnswers[akey] = { checks: checks };
+      return;
+    }
+    if (kind === 'table') {
+      const inputs = wrap.querySelectorAll('input[data-r]');
+      let maxR = 0, maxC = 0;
+      inputs.forEach(inp => {
+        maxR = Math.max(maxR, Number(inp.getAttribute('data-r')) || 0);
+        maxC = Math.max(maxC, Number(inp.getAttribute('data-c')) || 0);
+      });
+      const matrix = [];
+      for (let r = 0; r <= maxR; r++) {
+        matrix[r] = [];
+        for (let c = 0; c <= maxC; c++) matrix[r][c] = '';
+      }
+      inputs.forEach(inp => {
+        const r = Number(inp.getAttribute('data-r')) || 0;
+        const c = Number(inp.getAttribute('data-c')) || 0;
+        matrix[r][c] = inp.value;
+      });
+      userAnswers[akey] = matrix;
+    } else {
+      const inp = wrap.querySelector('input');
+      userAnswers[akey] = inp ? inp.value : '';
+    }
+  }
+
+  function checkCurrentAnswer(task, slot) {
+    saveCurrentAnswerInputs();
+    const wrap = document.querySelector('.variant-answer-input');
+    if (!wrap) return;
+    wrap.classList.remove('ans-correct', 'ans-wrong');
+    const akey = wrap.getAttribute('data-akey') || answerKey(task, slot, currentSlotIndex);
+    const userVal = userAnswers[akey];
+    const spec = getAnswerSpecForSlot(task, slot);
+    const scored = scoreSlot(slot, userVal, spec);
+
+    let ok = false;
+    if (scored.status === true) ok = true;
+    else if (scored.maxPoints > 0 && scored.points === scored.maxPoints && scored.status !== null) ok = true;
+    else if (scored.pair === '13') {
+      // для 13 смотрим общий max по паре — локально: есть ли полный max на слоте
+      ok = scored.points >= 2;
+    }
+
+    wrap.classList.add(ok ? 'ans-correct' : 'ans-wrong');
+  }
+
+  function showCurrentTask() {
+    saveCurrentAnswerInputs();
+    const box = document.getElementById('variantList');
+    renderSlotButtons();
+    if (!currentVariant.length) {
+      box.innerHTML = '<div class="variant-empty">Недостаточно заданий для варианта. Добавьте задания в банк.</div>';
+      return;
+    }
+    if (currentSlotIndex < 0) currentSlotIndex = 0;
+    if (currentSlotIndex >= currentVariant.length) currentSlotIndex = currentVariant.length - 1;
+    const t = currentVariant[currentSlotIndex];
+    if (t._missing) {
+      box.innerHTML = '<div class="variant-empty">Нет задания для номера ' + escapeHtml(String(t._slotLabel)) + '</div>';
+      return;
+    }
+    const text = isHtml(t.text) ? t.text : escapeHtml(t.text);
+    const codeColor = t.codeColor || 'fipi';
+    const code = t.code
+      ? '<span class="task-code code-' + codeColor + '">Номер: ' + escapeHtml(t.code) + '</span>'
+      : '';
+    const files = (t.files && t.files.length)
+      ? '<div class="task-files"><div class="task-files-label">Файлы</div><ul>' + t.files.map(f => {
+          const name = escapeHtml(f.name || 'файл');
+          const url = f.dataUrl || '';
+          if (!url) return '<li>' + name + '</li>';
+          const isImg = (f.type || '').startsWith('image/') || /\.(png|jpe?g|gif|webp)$/i.test(f.name || '');
+          if (isImg) return '<li class="task-file-img"><a href="' + url + '" target="_blank" rel="noopener"><img src="' + url + '" alt="' + name + '"></a><span>' + name + '</span></li>';
+          return '<li><a href="' + url + '" target="_blank" rel="noopener">' + name + '</a></li>';
+        }).join('') + '</ul></div>'
+      : '';
+    const slot = t._slotLabel || String(t.number);
+    const seq = t.seq != null ? t.seq : '';
+    const answerIn = buildAnswerInputHtml(t, slot, currentSlotIndex);
+    const checkBtn = practiceMode
+      ? '<button type="button" class="btn-check-answer" id="btnCheckAnswer">Проверить</button>'
+      : '';
+    box.innerHTML = '<article class="task-card variant-card">' +
+      '<div class="task-header">' +
+        '<div class="task-title">' +
+          '<span class="task-seq">Задание ' + escapeHtml(String(slot)) + '</span>' +
+          (seq !== '' ? '<span class="task-number">№ ' + escapeHtml(String(seq)) + '</span>' : '') +
+        '</div>' +
+        '<div class="task-actions">' + code + '</div>' +
+      '</div>' +
+      '<div class="task-text">' + text + '</div>' +
+      files +
+      '<div class="variant-answer-wrap">' + answerIn + checkBtn + '</div>' +
+    '</article>';
+
+    const checkEl = document.getElementById('btnCheckAnswer');
+    if (checkEl) {
+      checkEl.onclick = () => checkCurrentAnswer(t, slot);
+    }
+
+    // После «Завершить» — решение с кнопкой показать/скрыть
+    let showSol = false;
+    try { showSol = sessionStorage.getItem('bank_show_solutions') === '1'; } catch (e) {}
+    if (showSol && !practiceMode) {
+      const hasSol = t.solution && String(t.solution).replace(/<[^>]+>/g, '').trim().length > 0;
+      if (hasSol) {
+        const solHtml = isHtml(t.solution) ? t.solution : escapeHtml(t.solution);
+        const solWrap = document.createElement('div');
+        solWrap.className = 'card-solution-wrap';
+        solWrap.style.cssText = 'margin-top:14px;padding-top:12px;border-top:1px dashed #d1d5db';
+        solWrap.innerHTML =
+          '<button type="button" class="btn-bank" id="btnToggleSol" style="background:#6b7280;margin-bottom:10px">Показать решение</button>' +
+          '<div id="solBody" class="solution-body" hidden style="font-size:15px;line-height:1.55">' + solHtml + '</div>';
+        const card = box.querySelector('.variant-card');
+        if (card) card.appendChild(solWrap);
+        const btn = document.getElementById('btnToggleSol');
+        const body = document.getElementById('solBody');
+        if (btn && body) {
+          btn.onclick = () => {
+            const open = body.hidden;
+            body.hidden = !open;
+            btn.textContent = open ? 'Скрыть решение' : 'Показать решение';
+            if (open && window.MathJax && MathJax.typesetPromise) {
+              MathJax.typesetPromise([body]).catch(() => {});
+            }
+          };
+        }
+      }
+    }
+
+    if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise([box]).catch(() => {});
+    }
+    bindAnswerPaste();
+    persistVariantState();
+  }
+
+  function persistVariantState() {
+    try {
+      sessionStorage.setItem('bank_variant_state', JSON.stringify({
+        exam: exam,
+        variant: currentVariant,
+        answers: userAnswers,
+        slotIndex: currentSlotIndex,
+        variantCode: variantCode
+      }));
+    } catch (e) { console.warn(e); }
+  }
+
+  function renderVariant(list, keepAnswers) {
+    currentVariant = list || [];
+    currentSlotIndex = 0;
+    if (!keepAnswers) {
+      Object.keys(userAnswers).forEach(k => { delete userAnswers[k]; });
+      try { sessionStorage.removeItem('bank_show_solutions'); } catch (e) {}
+    }
+    const panel = document.getElementById('resultsPanel');
+    if (panel) { panel.hidden = true; panel.innerHTML = ''; }
+    showCurrentTask();
+    persistVariantState();
+  }
+
+  async function generate() {
+    const status = document.getElementById('status');
+    status.textContent = 'Загрузка заданий…';
+    document.getElementById('variantList').innerHTML = '';
+
+    if (typeof initFirebase === 'function') initFirebase();
+
+    let all = [];
+    try {
+      all = await dbFetchTasks();
+    } catch (e) {
+      status.style.display = 'block';
+      status.textContent = 'Ошибка загрузки: ' + (e.message || e);
+      return;
+    }
+    // Постоянные порядковые № (не сдвигаются при удалении)
+    let maxSeq = 0;
+    all.forEach(t => { const s = Number(t.seq); if (Number.isFinite(s) && s > maxSeq) maxSeq = s; });
+    all = all.map((task) => {
+      if (task.seq != null && Number.isFinite(Number(task.seq)) && Number(task.seq) > 0)
+        return { ...task, seq: Number(task.seq) };
+      maxSeq += 1;
+      return { ...task, seq: maxSeq };
+    });
+
+    let pool = all;
+
+    function normNum(v) {
+      return String(v == null ? '' : v).trim().replace(',', '.').replace(/[–—−]/g, '-').replace(/\s+/g, '');
+    }
+
+    /** "19-21" → [19,20,21]; "13.1" → null (не диапазон целых) */
+    function expandRangeKey(key) {
+      const m = String(key).match(/^(\d+)-(\d+)$/);
+      if (!m) return null;
+      const a = parseInt(m[1], 10), b = parseInt(m[2], 10);
+      if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+      const lo = Math.min(a, b), hi = Math.max(a, b);
+      const out = [];
+      for (let i = lo; i <= hi; i++) out.push(i);
+      return out;
+    }
+
+    // точное совпадение номера + покрытие диапазонами
+    const byNum = {};
+    const rangeTasks = []; // { from, to, nums, tasks: [] }
+    pool.forEach(t => {
+      const key = normNum(t.number);
+      if (!key) return;
+      if (!byNum[key]) byNum[key] = [];
+      byNum[key].push(t);
+      const nums = expandRangeKey(key);
+      if (nums && nums.length > 1) {
+        rangeTasks.push({ key, nums, tasks: byNum[key] });
+      }
+    });
+
+    function candidatesForSlot(slot) {
+      const key = normNum(slot);
+      const list = [];
+      if (byNum[key]) list.push(...byNum[key]);
+      // целочисленный слот 19 ← задание "19-21"
+      const n = parseInt(key, 10);
+      if (String(n) === key) {
+        rangeTasks.forEach(r => {
+          if (r.nums.includes(n)) list.push(...r.tasks);
+        });
+      }
+      // уникальные по id
+      const seen = new Set();
+      return list.filter(t => {
+        const id = t.id || t.code;
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+    }
+
+    /** Вырезать из общего текста часть «Задание N.» */
+    function extractSlotText(fullHtml, slotNum) {
+      if (!fullHtml) return fullHtml;
+      const plain = fullHtml;
+      const re = /Задание\s*(\d+)\s*\./gi;
+      const matches = [];
+      let m;
+      const copy = String(plain);
+      re.lastIndex = 0;
+      while ((m = re.exec(copy)) !== null) {
+        matches.push({ num: parseInt(m[1], 10), index: m.index, len: m[0].length });
+      }
+      if (matches.length < 2) return formatSlotBody(fullHtml, slotNum);
+      const target = parseInt(slotNum, 10);
+      for (let i = 0; i < matches.length; i++) {
+        if (matches[i].num === target) {
+          const start = matches[i].index;
+          const end = i + 1 < matches.length ? matches[i + 1].index : copy.length;
+          return formatSlotBody(copy.slice(start, end).trim(), slotNum);
+        }
+      }
+      return formatSlotBody(fullHtml, slotNum);
+    }
+
+    /** Оставить «Задание N.» только для 19, 20, 21 — и сделать полужирным */
+    function formatSlotBody(html, slotNum) {
+      if (!html) return html;
+      let s = String(html);
+      const n = parseInt(String(slotNum).replace(/[^0-9].*$/, ''), 10);
+      const keepHeader = (n === 19 || n === 20 || n === 21);
+
+      // снять strong/b вокруг заголовков
+      s = s.replace(/<(?:strong|b)>(\s*Задание\s*\d+\s*\.)<\/(?:strong|b)>/gi, '$1');
+
+      if (keepHeader) {
+        // оставить только заголовок своего номера, полужирным
+        const re = new RegExp('(Задание\\s*' + n + '\\s*\\.)', 'i');
+        if (re.test(s)) {
+          s = s.replace(re, '<strong>$1</strong>');
+        } else if (!/Задание\s*\d+\s*\./i.test(s)) {
+          s = '<strong>Задание ' + n + '.</strong> ' + s;
+        }
+        return s;
+      }
+
+      // для остальных слотов — убрать все «Задание N.»
+      s = s.replace(/(?:<p[^>]*>)?\s*Задание\s*\d+\s*\.\s*(?:<\/p>)?/gi, '');
+      s = s.replace(/Задание\s*\d+\s*\./gi, '');
+      return s.trim();
+    }
+
+    // Слоты варианта
+    let slots;
+    const fullOge = [1,2,3,4,5,6,7,8,9,10,11,12,'13.1','13.2',14,15,16];
+    const fullEge = Array.from({ length: 27 }, (_, i) => i + 1);
+    const full = exam === 'oge' ? fullOge : fullEge;
+
+    if (typeof practiceMode !== 'undefined' && practiceMode && practiceTypes && practiceTypes.length) {
+      const set = new Set(practiceTypes.map(String));
+      const base = full.filter(s => set.has(String(s)));
+      let times = practiceCount;
+      const pcEl = document.getElementById('practiceCount');
+      if (pcEl) {
+        const v = parseInt(pcEl.value, 10);
+        if (Number.isFinite(v) && v > 0) times = v;
+      }
+      slots = [];
+      for (let round = 0; round < times; round++) {
+        base.forEach(s => slots.push(s));
+      }
+    } else if (typeof practiceMode !== 'undefined' && practiceMode && practiceTypes && !practiceTypes.length) {
+      slots = [];
+    } else {
+      slots = full.slice();
+    }
+
+    const variant = [];
+    const missing = [];
+    const usedIds = new Set();
+    // слот → уже выбранное задание из диапазона (чтобы 19,20,21 = одно)
+    const slotTask = {};
+
+    slots.forEach((slot, slotIndex) => {
+      const key = normNum(slot);
+      // ЕГЭ 19-21: одно задание на диапазон (не для ОГЭ-практики с повторами)
+      if (exam === 'ege' && slotTask[key]) {
+        const t = slotTask[key];
+        const part = extractSlotText(t.text, key);
+        variant.push({ ...t, text: part, _slotLabel: key });
+        return;
+      }
+
+      let arr = candidatesForSlot(key).filter(t => !usedIds.has(t.id));
+      if (!arr.length) arr = candidatesForSlot(key); // повтор допустим, если заданий мало
+      if (!arr.length) {
+        missing.push(key);
+        variant.push({ _missing: true, _slotLabel: key, number: key, seq: '', text: '', code: '' });
+        return;
+      }
+      const t = pickRandom(arr);
+      if (t && t.id) usedIds.add(t.id);
+
+      if (exam === 'ege') {
+        const covered = expandRangeKey(normNum(t.number));
+        if (covered && covered.length > 1) {
+          covered.forEach(n => { slotTask[String(n)] = t; });
+        }
+      }
+
+      const part = extractSlotText(t.text, key);
+      // уникальная метка для повторяющихся типов в практике: 1, 1, 1...
+      variant.push({ ...t, text: part, _slotLabel: key, _slotIndex: slotIndex });
+    });
+
+    status.textContent = '';
+    status.style.display = 'none';
+    if (!variant.length) {
+      status.style.display = 'block';
+      status.textContent = 'Нет заданий для генерации. Добавьте задания в банк.';
+    }
+    if (!practiceMode) ensureVariantCode(true);
+    renderVariant(variant);
+  }
+
+  function goSlot(delta) {
+    if (!currentVariant.length) return;
+    currentSlotIndex = (currentSlotIndex + delta + currentVariant.length) % currentVariant.length;
+    showCurrentTask();
+  }
+  const prevBtn = document.getElementById('slotPrev');
+  const nextBtn = document.getElementById('slotNext');
+  if (prevBtn) prevBtn.onclick = () => goSlot(-1);
+  if (nextBtn) nextBtn.onclick = () => goSlot(1);
+
+  
+  function normalizeAnswerToken(s) {
+    return String(s == null ? '' : s)
+      .trim()
+      .replace(/,/g, '.')
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+  }
+
+  function answersEqual(a, b) {
+    return normalizeAnswerToken(a) === normalizeAnswerToken(b);
+  }
+
+  function formatUserAnswer(val) {
+    if (val == null || val === '') return '';
+    if (typeof val === 'string') return val.trim();
+    if (Array.isArray(val)) {
+      return val.map(row => {
+        if (Array.isArray(row)) return row.map(c => String(c == null ? '' : c).trim()).filter(x => x !== '').join(' ');
+        return String(row == null ? '' : row).trim();
+      }).filter(line => line !== '').join('\n');
+    }
+    return String(val);
+  }
+
+  function formatCorrectFromSpec(spec) {
+    if (!spec) return '';
+    if (spec.kind === 'text') return String(spec.ref == null ? '' : spec.ref);
+    if (spec.kind === 'table') {
+      const ref = spec.ref;
+      if (Array.isArray(ref) && ref.length && !Array.isArray(ref[0])) {
+        return ref.map(c => String(c == null ? '' : c)).join(' ');
+      }
+      if (Array.isArray(ref)) {
+        return ref.map(row => {
+          if (Array.isArray(row)) return row.map(c => String(c == null ? '' : c)).join(' ');
+          return String(row == null ? '' : row);
+        }).join('\n');
+      }
+    }
+    return '';
+  }
+
+  function isAnswerEmpty(userVal) {
+    if (userVal == null || userVal === '') return true;
+    if (userVal && typeof userVal === 'object' && userVal.checks) {
+      return !(userVal.checks[0] || userVal.checks[1]);
+    }
+    if (Array.isArray(userVal)) {
+      return userVal.every(row =>
+        Array.isArray(row) ? row.every(c => !String(c || '').trim()) : !String(row || '').trim()
+      );
+    }
+    return !String(userVal).trim();
+  }
+
+  function flattenTokens(val) {
+    if (val == null) return [];
+    if (typeof val === 'string') {
+      return val.trim().split(/[\s,;]+/).filter(Boolean);
+    }
+    if (Array.isArray(val)) {
+      const out = [];
+      val.forEach(row => {
+        if (Array.isArray(row)) row.forEach(c => { if (String(c || '').trim()) out.push(String(c).trim()); });
+        else if (String(row || '').trim()) out.push(String(row).trim());
+      });
+      return out;
+    }
+    return [String(val).trim()].filter(Boolean);
+  }
+
+  function correctTokensFromSpec(spec) {
+    if (!spec) return [];
+    if (spec.kind === 'text') return flattenTokens(spec.ref);
+    if (spec.kind === 'table') {
+      const ref = spec.ref;
+      if (Array.isArray(ref) && ref.length && !Array.isArray(ref[0])) return flattenTokens(ref);
+      return flattenTokens(ref);
+    }
+    return [];
+  }
+
+  function checkAnswer(userVal, spec) {
+    if (!spec) return null;
+    if (isAnswerEmpty(userVal)) return null;
+    if (spec.kind === 'text') return answersEqual(userVal, spec.ref);
+    const ref = spec.ref;
+    let matrix;
+    if (Array.isArray(ref) && ref.length && !Array.isArray(ref[0])) matrix = [ref];
+    else matrix = ref || [];
+    if (!Array.isArray(userVal)) return false;
+    for (let r = 0; r < matrix.length; r++) {
+      const refRow = Array.isArray(matrix[r]) ? matrix[r] : [matrix[r]];
+      const userRow = userVal[r] || [];
+      for (let c = 0; c < refRow.length; c++) {
+        if (!answersEqual(userRow[c], refRow[c])) return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Баллы ЕГЭ информатика:
+   * 1–25: 1 балл
+   * 26: 2 балла (оба числа), 1 балл (одно число)
+   * 27: 2 балла (все 4), 1 балл (хотя бы одно верное в 1-й или 2-й строке)
+   */
+  function scoreSlot(slot, userVal, spec) {
+    const slotStr = String(slot);
+    const n = parseInt(slotStr, 10);
+
+    // ——— ОГЭ ———
+    if (exam === 'oge') {
+      // 13.1 / 13.2: чекбоксы, вместе макс. 2 балла (считаются парой в finish)
+      if (slotStr === '13.1' || slotStr === '13.2') {
+        const checks = (userVal && userVal.checks) ? userVal.checks : [false, false];
+        const cnt = (checks[0] ? 1 : 0) + (checks[1] ? 1 : 0);
+        if (cnt === 0) return { status: null, points: 0, maxPoints: 0, pair: '13' };
+        return { status: cnt === 2 ? true : 'partial', points: cnt, maxPoints: 0, pair: '13', checkCount: cnt };
+      }
+      if (slotStr === '15' || slotStr === '16') {
+        const checks = (userVal && userVal.checks) ? userVal.checks : [false, false];
+        const cnt = (checks[0] ? 1 : 0) + (checks[1] ? 1 : 0);
+        if (cnt === 0) return { status: null, points: 0, maxPoints: 2 };
+        if (cnt === 2) return { status: true, points: 2, maxPoints: 2 };
+        return { status: 'partial', points: 1, maxPoints: 2 };
+      }
+      if (slotStr === '14' || n === 14) {
+        // 1 балл за каждую совпавшую строку, макс 3
+        if (isAnswerEmpty(userVal)) return { status: null, points: 0, maxPoints: 3 };
+        let correctLines = [];
+        if (spec) {
+          if (spec.kind === 'text') {
+            correctLines = String(spec.ref || '').replace(/\r\n/g, '\n').split('\n').map(l => l.trim()).filter(Boolean);
+          } else {
+            correctLines = String(formatCorrectFromSpec(spec) || '').replace(/\r\n/g, '\n').split('\n').map(l => l.trim()).filter(Boolean);
+          }
+        }
+        let userLines = [];
+        if (typeof userVal === 'string') {
+          userLines = userVal.replace(/\r\n/g, '\n').split('\n').map(l => l.trim()).filter(Boolean);
+        } else if (Array.isArray(userVal)) {
+          userLines = userVal.map(row => Array.isArray(row) ? row.join(' ') : String(row || '')).map(l => l.trim()).filter(Boolean);
+        }
+        let hits = 0;
+        const lim = Math.min(3, Math.max(correctLines.length, userLines.length));
+        for (let i = 0; i < lim; i++) {
+          if (correctLines[i] != null && userLines[i] != null && answersEqual(userLines[i], correctLines[i])) hits++;
+        }
+        const points = Math.min(3, hits);
+        if (points === 0) return { status: false, points: 0, maxPoints: 3 };
+        if (points >= Math.min(3, correctLines.length || 3)) return { status: true, points: points, maxPoints: 3 };
+        return { status: 'partial', points: points, maxPoints: 3 };
+      }
+      // 1–12: 1 балл
+      if (isAnswerEmpty(userVal)) return { status: null, points: 0, maxPoints: 1 };
+      const ok = checkAnswer(userVal, spec);
+      if (ok) return { status: true, points: 1, maxPoints: 1 };
+      return { status: false, points: 0, maxPoints: 1 };
+    }
+
+    // ——— ЕГЭ ———
+    const empty = isAnswerEmpty(userVal);
+    if (empty) return { status: null, points: 0, maxPoints: (n === 26 || n === 27) ? 2 : 1 };
+
+    if (n === 26) {
+      const correctToks = correctTokensFromSpec(spec).slice(0, 2);
+      const userToks = flattenTokens(userVal);
+      let hit = 0;
+      // по позициям: 1-е и 2-е число
+      for (let i = 0; i < correctToks.length; i++) {
+        if (userToks[i] != null && answersEqual(userToks[i], correctToks[i])) hit++;
+      }
+      // если порядок свободный — fallback: сколько совпало среди множества
+      if (hit === 0 && correctToks.length) {
+        const used = new Set();
+        correctToks.forEach(ct => {
+          const idx = userToks.findIndex((ut, j) => !used.has(j) && answersEqual(ut, ct));
+          if (idx >= 0) { used.add(idx); hit++; }
+        });
+      }
+      const maxPoints = 2;
+      if (hit >= 2) return { status: true, points: 2, maxPoints };
+      if (hit === 1) return { status: 'partial', points: 1, maxPoints };
+      return { status: false, points: 0, maxPoints };
+    }
+
+    if (n === 27) {
+      const correctToks = correctTokensFromSpec(spec).slice(0, 4);
+      let userMatrix;
+      if (Array.isArray(userVal) && userVal.length && Array.isArray(userVal[0])) {
+        userMatrix = userVal;
+      } else {
+        const toks = flattenTokens(userVal);
+        userMatrix = [toks.slice(0, 2), toks.slice(2, 4)];
+      }
+      // эталон: 2 строки по 2 числа
+      let refMatrix;
+      if (spec.kind === 'table' && Array.isArray(spec.ref) && Array.isArray(spec.ref[0])) {
+        refMatrix = spec.ref;
+      } else {
+        const ct = correctToks;
+        refMatrix = [ct.slice(0, 2), ct.slice(2, 4)];
+      }
+
+      function rowHits(uRow, rRow) {
+        let h = 0;
+        const rr = Array.isArray(rRow) ? rRow : [rRow];
+        const ur = Array.isArray(uRow) ? uRow : [uRow];
+        for (let i = 0; i < rr.length; i++) {
+          if (ur[i] != null && answersEqual(ur[i], rr[i])) h++;
+        }
+        return h;
+      }
+
+      const h0 = rowHits(userMatrix[0] || [], refMatrix[0] || []);
+      const h1 = rowHits(userMatrix[1] || [], refMatrix[1] || []);
+      const totalHit = h0 + h1;
+      const need = (refMatrix[0] || []).length + (refMatrix[1] || []).length;
+      const maxPoints = 2;
+      if (need > 0 && totalHit >= need) return { status: true, points: 2, maxPoints };
+      // один балл: хотя бы одно верное в 1-й ИЛИ во 2-й строке
+      if (h0 >= 1 || h1 >= 1) return { status: 'partial', points: 1, maxPoints };
+      return { status: false, points: 0, maxPoints };
+    }
+
+    // 1–25 и прочие
+    const ok = checkAnswer(userVal, spec);
+    if (ok === null) return { status: null, points: 0, maxPoints: 1 };
+    if (ok) return { status: true, points: 1, maxPoints: 1 };
+    return { status: false, points: 0, maxPoints: 1 };
+  }
+
+
+  function finishVariant() {
+    saveCurrentAnswerInputs();
+    if (!currentVariant.length) {
+      alert('Нет заданий для проверки');
+      return;
+    }
+
+    let correct = 0;
+    let total = 0;
+    const rowData = [];
+
+    let primary = 0;
+    let primaryMax = 0;
+    let pair13Checks = 0;
+    let pair13Answered = false;
+
+    currentVariant.forEach(t => {
+      if (t._missing) return;
+      const slot = String(t._slotLabel || t.number);
+      total += 1;
+      const spec = getAnswerSpecForSlot(t, slot);
+      const idx = currentVariant.indexOf(t);
+      const akey = answerKey(t, slot, idx >= 0 ? idx : 0);
+      const userVal = userAnswers[akey];
+      const scored = scoreSlot(slot, userVal, spec);
+      let userStr = formatUserAnswer(userVal);
+      if (userVal && userVal.checks) {
+        userStr = userVal.checks.map((c, i) => c ? ('☑' + (i + 1)) : ('☐' + (i + 1))).join(' ');
+      }
+      const correctStr = (slot === '13.1' || slot === '13.2' || slot === '15' || slot === '16')
+        ? 'чекбоксы'
+        : formatCorrectFromSpec(spec);
+
+      if (scored.pair === '13') {
+        pair13Checks += (scored.checkCount || 0);
+        if (scored.status !== null) pair13Answered = true;
+        // баллы пары добавим после цикла
+        rowData.push({
+          slot: slot,
+          user: userStr,
+          correct: correctStr,
+          status: scored.status,
+          points: 0,
+          maxPoints: 0
+        });
+        return;
+      }
+
+      primary += scored.points;
+      primaryMax += scored.maxPoints;
+      if (scored.status === true) correct += 1;
+      rowData.push({
+        slot: slot,
+        user: userStr,
+        correct: correctStr,
+        status: scored.status,
+        points: scored.points,
+        maxPoints: scored.maxPoints
+      });
+    });
+
+    // 13.1 + 13.2: балл = max(галочки на 13.1, галочки на 13.2)
+    // 0 и 0 → 0; есть хотя бы одна (макс. 1) → 1; у кого-то две → 2
+    if (exam === 'oge') {
+      primaryMax += 2;
+      let c1 = 0, c2 = 0;
+      currentVariant.forEach((t, i) => {
+        const s = String(t._slotLabel || t.number);
+        const v = userAnswers[answerKey(t, s, i)];
+        if (!v || !v.checks) return;
+        const cnt = (v.checks[0] ? 1 : 0) + (v.checks[1] ? 1 : 0);
+        if (s === '13.1') c1 = Math.max(c1, cnt);
+        if (s === '13.2') c2 = Math.max(c2, cnt);
+      });
+      const p13 = Math.max(c1, c2); // 0, 1 или 2
+      primary += p13;
+      rowData.forEach(r => {
+        if (r.slot === '13.1' || r.slot === '13.2') {
+          r.points = p13;
+          r.maxPoints = 2;
+          if (p13 === 0 && c1 === 0 && c2 === 0) r.status = null;
+          else if (p13 === 2) r.status = true;
+          else if (p13 === 1) r.status = 'partial';
+          else r.status = false;
+        }
+      });
+    }
+
+    try {
+      sessionStorage.setItem('bank_variant_results', JSON.stringify({
+        exam: exam,
+        correct: correct,
+        total: total,
+        primary: primary,
+        primaryMax: primaryMax,
+        variantCode: variantCode || ensureVariantCode(false),
+        rows: rowData
+      }));
+      if (typeof persistVariantState === 'function') persistVariantState();
+    } catch (e) {
+      console.error(e);
+      alert('Не удалось сохранить результат');
+      return;
+    }
+
+    try { sessionStorage.setItem('bank_show_solutions', '1'); } catch (e) {}
+    location.href = 'results.html?exam=' + encodeURIComponent(exam) +
+      (practiceMode ? '&mode=practice' : '&mode=variant');
+  }
+
+
+  document.getElementById('btnFinish').onclick = finishVariant;
+  
+  // Восстановление варианта (после результатов / «К варианту»)
+  function tryRestoreVariant() {
+    const params = new URLSearchParams(location.search);
+    if (params.get('restore') !== '1') return false;
+    // не восстанавливать практику как полный вариант и наоборот
+    const stMode = params.get('mode') || 'variant';
+    let state = null;
+    try {
+      state = JSON.parse(sessionStorage.getItem('bank_variant_state') || 'null');
+    } catch (e) { state = null; }
+    if (!state || !state.variant || !state.variant.length) return false;
+    if (state.exam && state.exam !== exam) return false;
+
+    currentVariant = state.variant;
+    if (state.variantCode != null) {
+      variantCode = state.variantCode;
+      if (!practiceMode) ensureVariantCode(false);
+    }
+    Object.keys(userAnswers).forEach(k => delete userAnswers[k]);
+    if (state.answers) {
+      Object.keys(state.answers).forEach(k => { userAnswers[k] = state.answers[k]; });
+    }
+
+    const wantSlot = params.get('slot');
+    if (wantSlot != null && wantSlot !== '') {
+      const idx = currentVariant.findIndex(t => String(t._slotLabel || t.number) === String(wantSlot));
+      currentSlotIndex = idx >= 0 ? idx : (state.slotIndex || 0);
+    } else {
+      currentSlotIndex = state.slotIndex || 0;
+    }
+    showCurrentTask();
+    return true;
+  }
+
+
+  document.getElementById('btnGenerate').onclick = generate;
+  if (!tryRestoreVariant()) {
+    if (practiceMode) {
+      // ждём нажатия «Сгенерировать задания»
+      if (practiceTypes && practiceTypes.length) generate();
+    } else {
+      generate();
+    }
+  }
+
+})();
+</script>
+</body>
+</html>
