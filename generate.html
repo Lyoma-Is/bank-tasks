@@ -415,7 +415,62 @@
   text-decoration: line-through;
 }
 @media print {
-  .gen-toolbar, .gen-slider, .back-link, .no-print { display: none !important; }
+  .gen-toolbar, .gen-slider, .back-link, .no-print, .profile-fab,
+  .finish-row, .slot-row, #status, #practicePanel, #resultsPanel,
+  .btn-check-answer, .card-solution-wrap { display: none !important; }
+  body { background: #fff !important; }
+  .tasks-container { max-width: none; padding: 0; margin: 0; }
+  #pageTitle { font-size: 16pt; margin: 0 0 12pt; }
+  .variant-list { display: block; gap: 0; }
+  .variant-card.task-card,
+  .task-card.variant-card {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 0 16pt !important;
+    margin: 0 0 12pt !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .variant-card .task-header,
+  .variant-card .task-number,
+  .variant-card .task-code,
+  .variant-card .task-actions,
+  .variant-answer-wrap {
+    display: none !important;
+  }
+  .print-task-label {
+    display: block !important;
+    font-weight: 700;
+    font-size: 12pt;
+    margin: 0 0 6pt;
+  }
+  .print-answers-page {
+    page-break-before: always;
+    break-before: page;
+    padding-top: 8pt;
+  }
+  .print-answers-title {
+    text-align: center;
+    font-size: 16pt;
+    font-weight: 700;
+    margin: 0 0 16pt;
+  }
+  .print-answers-table {
+    width: 50%;
+    max-width: 50%;
+    margin: 0 auto;
+    border-collapse: collapse;
+    font-size: 11pt;
+  }
+  .print-answers-table th {
+    background: #f3f4f6;
+    font-weight: 700;
+  }
+  .print-answers-table .print-col-num {
+    width: 1%;
+    white-space: nowrap;
+  }
   .type-select-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
 .type-grid {
   display: grid;
@@ -665,7 +720,132 @@ window.MathJax = {
   }
 
 
-  document.getElementById('btnPrint').onclick = () => window.print();
+  function buildCardHtml(t, index, forPrint) {
+    if (t._missing) {
+      return '<article class="task-card variant-card"><div class="variant-empty">Нет задания для номера ' +
+        escapeHtml(String(t._slotLabel)) + '</div></article>';
+    }
+    const text = isHtml(t.text) ? t.text : escapeHtml(t.text);
+    const codeColor = t.codeColor || 'fipi';
+    const code = t.code
+      ? '<span class="task-code code-' + codeColor + '">Номер: ' + escapeHtml(t.code) + '</span>'
+      : '';
+    const files = (t.files && t.files.length)
+      ? '<div class="task-files"><div class="task-files-label">Файлы</div><ul>' + t.files.map(f => {
+          const name = escapeHtml(f.name || 'файл');
+          const url = f.dataUrl || '';
+          if (!url) return '<li>' + name + '</li>';
+          const isImg = (f.type || '').startsWith('image/') || /\.(png|jpe?g|gif|webp)$/i.test(f.name || '');
+          if (isImg) return '<li class="task-file-img"><img src="' + url + '" alt="' + name + '"><span>' + name + '</span></li>';
+          return '<li>' + name + '</li>';
+        }).join('') + '</ul></div>'
+      : '';
+    const slot = t._slotLabel || String(t.number);
+    const seq = t.seq != null ? t.seq : '';
+    const answerIn = forPrint ? '' : buildAnswerInputHtml(t, slot, index);
+    const checkBtn = (!forPrint && practiceMode)
+      ? '<button type="button" class="btn-check-answer" id="btnCheckAnswer">Проверить</button>'
+      : '';
+    if (forPrint) {
+      return '<article class="task-card variant-card">' +
+        '<div class="print-task-label">Задание ' + escapeHtml(String(slot)) + '</div>' +
+        '<div class="task-text">' + text + '</div>' +
+        files +
+      '</article>';
+    }
+    return '<article class="task-card variant-card">' +
+      '<div class="task-header">' +
+        '<div class="task-title">' +
+          '<span class="task-seq">Задание ' + escapeHtml(String(slot)) + '</span>' +
+          (seq !== '' ? '<span class="task-number">№ ' + escapeHtml(String(seq)) + '</span>' : '') +
+        '</div>' +
+        '<div class="task-actions">' + code + '</div>' +
+      '</div>' +
+      '<div class="task-text">' + text + '</div>' +
+      files +
+      '<div class="variant-answer-wrap">' + answerIn + checkBtn + '</div>' +
+    '</article>';
+  }
+
+  function formatAnswerForPrint(task, slot) {
+    if (!task || task._missing) return '—';
+    if (task.answerTable && Array.isArray(task.answerTable) && task.answerTable.length) {
+      return task.answerTable.map(row =>
+        (Array.isArray(row) ? row : [row]).map(c => c == null ? '' : String(c)).join(' ')
+      ).join(' / ');
+    }
+    if (task.answer != null && String(task.answer).trim()) {
+      // для 19-21 вырезать нужную строку
+      const n = parseInt(String(slot), 10);
+      if (n >= 19 && n <= 21 && String(task.number).includes('19')) {
+        const lines = String(task.answer).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        const idx = n - 19;
+        if (lines[idx] != null) return lines[idx];
+      }
+      return String(task.answer).trim();
+    }
+    return '—';
+  }
+
+  function buildAnswersPrintPage() {
+    let title = '';
+    try {
+      const sn = getSectorVariantName();
+      if (sn) title = sn;
+      else if (variantCode) title = 'Вариант № ' + variantCode;
+      else title = document.getElementById('pageTitle')
+        ? document.getElementById('pageTitle').textContent
+        : 'Вариант';
+    } catch (e) {
+      title = 'Вариант';
+    }
+    let rows = '';
+    currentVariant.forEach((t, i) => {
+      const slot = t._slotLabel || String(t.number) || String(i + 1);
+      const ans = formatAnswerForPrint(t, slot);
+      rows += '<tr><td class="print-col-num" style="text-align:center;padding:6px 8px;border:1px solid #333;white-space:nowrap">' +
+        escapeHtml(String(slot)) +
+        '</td><td style="padding:6px 10px;border:1px solid #333">' +
+        escapeHtml(ans) +
+        '</td></tr>';
+    });
+    return '<section class="print-answers-page">' +
+      '<h2 class="print-answers-title">' + escapeHtml(title) + '</h2>' +
+      '<table class="print-answers-table">' +
+        '<thead><tr>' +
+          '<th class="print-col-num" style="text-align:center;padding:6px 8px;border:1px solid #333">№</th>' +
+          '<th style="padding:6px 10px;border:1px solid #333">Ответ</th>' +
+        '</tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+      '</table>' +
+    '</section>';
+  }
+
+  function printAllTasks() {
+    saveCurrentAnswerInputs();
+    const box = document.getElementById('variantList');
+    if (!currentVariant.length) {
+      window.print();
+      return;
+    }
+    const html = currentVariant.map((t, i) => buildCardHtml(t, i, true)).join('') +
+      buildAnswersPrintPage();
+    box.innerHTML = html;
+    document.body.classList.add('print-mode');
+    const after = () => {
+      document.body.classList.remove('print-mode');
+      showCurrentTask();
+      window.removeEventListener('afterprint', after);
+    };
+    window.addEventListener('afterprint', after);
+    if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise([box]).catch(() => {}).then(() => setTimeout(() => window.print(), 50));
+    } else {
+      setTimeout(() => window.print(), 50);
+    }
+  }
+
+  document.getElementById('btnPrint').onclick = () => printAllTasks();
 
   function escapeHtml(s) {
     const d = document.createElement('div');
@@ -986,43 +1166,8 @@ window.MathJax = {
     if (currentSlotIndex < 0) currentSlotIndex = 0;
     if (currentSlotIndex >= currentVariant.length) currentSlotIndex = currentVariant.length - 1;
     const t = currentVariant[currentSlotIndex];
-    if (t._missing) {
-      box.innerHTML = '<div class="variant-empty">Нет задания для номера ' + escapeHtml(String(t._slotLabel)) + '</div>';
-      return;
-    }
-    const text = isHtml(t.text) ? t.text : escapeHtml(t.text);
-    const codeColor = t.codeColor || 'fipi';
-    const code = t.code
-      ? '<span class="task-code code-' + codeColor + '">Номер: ' + escapeHtml(t.code) + '</span>'
-      : '';
-    const files = (t.files && t.files.length)
-      ? '<div class="task-files"><div class="task-files-label">Файлы</div><ul>' + t.files.map(f => {
-          const name = escapeHtml(f.name || 'файл');
-          const url = f.dataUrl || '';
-          if (!url) return '<li>' + name + '</li>';
-          const isImg = (f.type || '').startsWith('image/') || /\.(png|jpe?g|gif|webp)$/i.test(f.name || '');
-          if (isImg) return '<li class="task-file-img"><a href="' + url + '" target="_blank" rel="noopener"><img src="' + url + '" alt="' + name + '"></a><span>' + name + '</span></li>';
-          return '<li><a href="' + url + '" target="_blank" rel="noopener">' + name + '</a></li>';
-        }).join('') + '</ul></div>'
-      : '';
+    box.innerHTML = buildCardHtml(t, currentSlotIndex, false);
     const slot = t._slotLabel || String(t.number);
-    const seq = t.seq != null ? t.seq : '';
-    const answerIn = buildAnswerInputHtml(t, slot, currentSlotIndex);
-    const checkBtn = practiceMode
-      ? '<button type="button" class="btn-check-answer" id="btnCheckAnswer">Проверить</button>'
-      : '';
-    box.innerHTML = '<article class="task-card variant-card">' +
-      '<div class="task-header">' +
-        '<div class="task-title">' +
-          '<span class="task-seq">Задание ' + escapeHtml(String(slot)) + '</span>' +
-          (seq !== '' ? '<span class="task-number">№ ' + escapeHtml(String(seq)) + '</span>' : '') +
-        '</div>' +
-        '<div class="task-actions">' + code + '</div>' +
-      '</div>' +
-      '<div class="task-text">' + text + '</div>' +
-      files +
-      '<div class="variant-answer-wrap">' + answerIn + checkBtn + '</div>' +
-    '</article>';
 
     const checkEl = document.getElementById('btnCheckAnswer');
     if (checkEl) {
