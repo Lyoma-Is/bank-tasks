@@ -5,23 +5,115 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Раздел</title>
 <link rel="stylesheet" href="styles.css">
+<style>
+.sector-toolbar { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:24px; }
+.sectors-list { display:flex; flex-direction:column; gap:20px; margin-top:8px; }
+.sector-card {
+  background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px 18px 16px;
+}
+.sector-title-input {
+  display:block; width:100%; max-width:520px; margin:0 auto 16px;
+  text-align:center; font-size:1.35rem; font-weight:700;
+  border:1px dashed #d1d5db; border-radius:8px; padding:10px 14px;
+  color:#111827; background:#f9fafb;
+}
+.sector-title-input:focus {
+  outline:none; border-color:#2563eb; background:#fff;
+  box-shadow:0 0 0 3px rgba(37,99,235,.12);
+}
+.sector-title-view {
+  text-align:center; font-size:1.35rem; font-weight:700; margin:0 0 16px; color:#111827;
+}
+.sector-actions { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:12px; }
+.variant-form {
+  border:1px solid #e5e7eb; border-radius:10px; padding:14px; margin:12px 0; background:#f9fafb;
+}
+.variant-form label { display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:6px; }
+.variant-form input[type=text] {
+  width:100%; max-width:360px; padding:8px 12px; border:1px solid #d1d5db; border-radius:8px;
+  font-size:14px; margin-bottom:12px; box-sizing:border-box;
+}
+.numbers-grid {
+  display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:8px; margin-bottom:12px;
+}
+@media (max-width:640px){ .numbers-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+.numbers-grid input {
+  width:100%; padding:8px; border:1px solid #d1d5db; border-radius:8px; font-size:13px;
+  text-align:center; box-sizing:border-box;
+}
+.variants-list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+.variants-grid {
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:10px;
+  margin-top:8px;
+}
+@media (max-width:720px) {
+  .variants-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width:480px) {
+  .variants-grid { grid-template-columns:1fr; }
+}
+.variants-grid .variant-btn {
+  justify-content:center;
+  text-align:center;
+  min-height:48px;
+}
+.variants-grid .variant-btn .v-name {
+  flex:none;
+  width:100%;
+  text-align:center;
+}
+.variant-btn {
+  display:flex; flex-wrap:wrap; align-items:center; gap:10px; width:100%;
+  padding:12px 14px; background:#fff; border:1px solid #e5e7eb; border-radius:8px;
+  cursor:pointer; text-align:left; font:inherit; color:inherit;
+  transition:border-color .15s, box-shadow .15s, background .15s;
+}
+.variant-btn:hover {
+  border-color:#2563eb; background:#eff6ff;
+  box-shadow:0 2px 8px rgba(37,99,235,.1);
+}
+.variant-btn .v-name { font-weight:700; flex:1; min-width:120px; }
+.variant-btn .v-nums { font-size:13px; color:#6b7280; }
+.variant-row { display:flex; gap:8px; align-items:stretch; }
+.variant-row .variant-btn { flex:1; }
+.sector-foot { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
+.btn-danger-sm {
+  background:#fee2e2; color:#b91c1c; border:none; padding:8px 12px;
+  border-radius:8px; font-weight:600; font-size:13px; cursor:pointer;
+}
+.btn-edit-sm {
+  background:#e0e7ff; color:#3730a3; border:none; padding:8px 12px;
+  border-radius:8px; font-weight:600; font-size:13px; cursor:pointer;
+}
+</style>
 </head>
 <body>
 <main class="tasks-container home-page">
   <h1 id="examTitle" style="margin:0 0 20px;font-size:1.75rem">Информатика</h1>
-  <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:28px">
+  <div class="sector-toolbar">
     <a href="index.html" class="home-logo" title="На главную"><img src="oge.jpg" alt="ЕГЭ/ОГЭ"></a>
     <a href="#" id="bankLink" class="btn-bank">Банк заданий</a>
     <a href="#" id="genLink" class="btn-bank" style="background:#059669">Сгенерировать вариант</a>
     <a href="#" id="practiceLink" class="btn-bank" style="background:#7c3aed">Сгенерировать задания</a>
+    <button type="button" class="btn-bank" id="btnAddSector" style="background:#0f766e;display:none">Добавить сектор</button>
   </div>
+  <div class="sectors-list" id="sectorsList"></div>
 </main>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="firebase-db.js"></script>
+<script src="auth.js"></script>
 <script>
 (function(){
   const params = new URLSearchParams(location.search);
   let exam = (params.get('exam') || '').toLowerCase();
   if (exam !== 'oge' && exam !== 'ege') exam = 'ege';
   try { sessionStorage.setItem('bank_exam', exam); } catch(e){}
+  window.__BANK_EXAM__ = exam;
+
   const titles = { oge: 'Информатика ОГЭ', ege: 'Информатика ЕГЭ' };
   document.getElementById('examTitle').textContent = titles[exam];
   document.title = titles[exam];
@@ -29,15 +121,217 @@
   document.getElementById('genLink').href = 'generate.html?exam=' + exam + '&mode=variant';
   document.getElementById('genLink').addEventListener('click', function() {
     try {
+      sessionStorage.removeItem('sector_variant_seqs');
+      sessionStorage.removeItem('sector_variant_name');
       sessionStorage.removeItem(exam + '_gen_types');
       sessionStorage.removeItem(exam + '_gen_count');
-      sessionStorage.removeItem('oge_gen_types');
-      sessionStorage.removeItem('oge_gen_count');
     } catch(e){}
   });
   document.getElementById('practiceLink').href = 'generate.html?exam=' + exam + '&mode=practice';
+
+  const SLOT_PLACEHOLDERS = exam === 'oge'
+    ? [1,2,3,4,5,6,7,8,9,10,11,12,'13.1','13.2',14,15,16]
+    : Array.from({length:27}, (_,i)=>i+1);
+
+  function uid() {
+    return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+  function isAdmin() {
+    return typeof BankAuth !== 'undefined' && BankAuth.isAdmin();
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function escapeAttr(s) { return escapeHtml(s).replace(/'/g, '&#39;'); }
+
+  const btnAdd = document.getElementById('btnAddSector');
+  if (isAdmin()) btnAdd.style.display = 'inline-flex';
+
+  let sectors = [];
+
+  async function loadSectors() {
+    if (typeof initFirebase === 'function') initFirebase();
+    sectors = await dbFetchSectors();
+    sectors.sort((a, b) => (b.created || 0) - (a.created || 0));
+    renderSectors();
+  }
+
+  function openVariant(v) {
+    // seq = порядковые номера заданий из банка
+    const seqs = (v.numbers || []).map(s => String(s).trim()).filter(Boolean);
+    try {
+      sessionStorage.setItem('sector_variant_seqs', JSON.stringify(seqs));
+      sessionStorage.setItem('sector_variant_name', v.name || 'Вариант');
+    } catch(e){}
+    location.href = 'generate.html?exam=' + exam + '&mode=variant&seqs=' + encodeURIComponent(seqs.join(','));
+  }
+
+  function buildNumberGrid(container, values) {
+    container.innerHTML = '';
+    SLOT_PLACEHOLDERS.forEach((ph, i) => {
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.placeholder = String(ph);
+      inp.dataset.slot = String(ph);
+      if (values && values[i] != null && values[i] !== '') inp.value = values[i];
+      container.appendChild(inp);
+    });
+  }
+
+  function readNumbers(formBox) {
+    return [...formBox.querySelectorAll('[data-grid] input')].map(inp => (inp.value || '').trim());
+  }
+
+  function showVariantForm(formBox, sector, existing) {
+    formBox.hidden = false;
+    formBox.innerHTML =
+      '<label>Название варианта</label>' +
+      '<input type="text" data-vname placeholder="Например: Вариант 1" value="' + escapeAttr(existing ? (existing.name || '') : '') + '">' +
+      '<label>Порядковые номера заданий (№ в банке)</label>' +
+      '<div class="numbers-grid" data-grid></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button type="button" class="btn-bank" data-save-variant style="background:#059669">' +
+          (existing ? 'Сохранить' : 'Добавить') + '</button>' +
+        '<button type="button" class="btn-bank" data-cancel-form style="background:#6b7280">Отмена</button>' +
+      '</div>';
+    const grid = formBox.querySelector('[data-grid]');
+    buildNumberGrid(grid, existing ? existing.numbers : null);
+
+    formBox.querySelector('[data-cancel-form]').onclick = () => {
+      formBox.hidden = true;
+      formBox.innerHTML = '';
+    };
+    formBox.querySelector('[data-save-variant]').onclick = async () => {
+      const name = (formBox.querySelector('[data-vname]').value || '').trim() || 'Вариант';
+      const numbers = readNumbers(formBox);
+      const filled = numbers.filter(Boolean);
+      if (!filled.length) {
+        alert('Укажите хотя бы один порядковый номер задания');
+        return;
+      }
+      if (!sector.variants) sector.variants = [];
+      if (existing) {
+        const v = sector.variants.find(x => x.id === existing.id);
+        if (v) { v.name = name; v.numbers = numbers; }
+      } else {
+        sector.variants.push({ id: uid(), name: name, numbers: numbers });
+      }
+      await dbSaveSector(sector);
+      formBox.hidden = true;
+      formBox.innerHTML = '';
+      await loadSectors();
+    };
+  }
+
+  function renderSectors() {
+    const box = document.getElementById('sectorsList');
+    box.innerHTML = '';
+    sectors.forEach(sector => {
+      const card = document.createElement('div');
+      card.className = 'sector-card';
+
+      const titleHtml = isAdmin()
+        ? '<input type="text" class="sector-title-input" data-role="title" value="' + escapeAttr(sector.title || '') + '" placeholder="Название сектора">'
+        : '<h2 class="sector-title-view">' + escapeHtml(sector.title || 'Сектор') + '</h2>';
+
+      let variantsHtml = '';
+      if (isAdmin()) {
+        variantsHtml = '<div class="variants-list">';
+        (sector.variants || []).forEach(v => {
+          const nums = (v.numbers || []).filter(Boolean).join(', ');
+          variantsHtml += '<div class="variant-row">' +
+            '<button type="button" class="variant-btn" data-open-variant="' + escapeAttr(v.id) + '">' +
+              '<span class="v-name">' + escapeHtml(v.name || 'Вариант') + '</span>' +
+              '<span class="v-nums">№ ' + escapeHtml(nums || '—') + '</span>' +
+            '</button>' +
+            '<button type="button" class="btn-edit-sm" data-edit-variant="' + escapeAttr(v.id) + '">Изменить</button>' +
+            '<button type="button" class="btn-danger-sm" data-del-variant="' + escapeAttr(v.id) + '">Удалить</button>' +
+          '</div>';
+        });
+        variantsHtml += '</div>';
+      } else {
+        variantsHtml = '<div class="variants-grid">';
+        (sector.variants || []).forEach(v => {
+          variantsHtml +=
+            '<button type="button" class="variant-btn" data-open-variant="' + escapeAttr(v.id) + '">' +
+              '<span class="v-name">' + escapeHtml(v.name || 'Вариант') + '</span>' +
+            '</button>';
+        });
+        variantsHtml += '</div>';
+      }
+
+      card.innerHTML =
+        titleHtml +
+        '<div class="sector-actions">' +
+          (isAdmin() ? '<button type="button" class="btn-bank" data-add-variant style="background:#7c3aed">Добавить вариант</button>' : '') +
+        '</div>' +
+        '<div class="variant-form" data-form hidden></div>' +
+        variantsHtml +
+        (isAdmin() ? '<div class="sector-foot"><button type="button" class="btn-danger-sm" data-del-sector>Удалить сектор</button></div>' : '');
+
+      box.appendChild(card);
+
+      const titleInp = card.querySelector('[data-role=title]');
+      if (titleInp) {
+        titleInp.addEventListener('change', async () => {
+          sector.title = titleInp.value.trim();
+          await dbSaveSector(sector);
+        });
+      }
+
+      const formBox = card.querySelector('[data-form]');
+      const btnAddVar = card.querySelector('[data-add-variant]');
+      if (btnAddVar) {
+        btnAddVar.addEventListener('click', () => showVariantForm(formBox, sector, null));
+      }
+
+      card.querySelectorAll('[data-open-variant]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const vid = btn.getAttribute('data-open-variant');
+          const v = (sector.variants || []).find(x => x.id === vid);
+          if (v) openVariant(v);
+        });
+      });
+
+      card.querySelectorAll('[data-edit-variant]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const vid = btn.getAttribute('data-edit-variant');
+          const v = (sector.variants || []).find(x => x.id === vid);
+          if (v) showVariantForm(formBox, sector, v);
+        });
+      });
+
+      card.querySelectorAll('[data-del-variant]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const vid = btn.getAttribute('data-del-variant');
+          if (!confirm('Удалить вариант?')) return;
+          sector.variants = (sector.variants || []).filter(v => v.id !== vid);
+          await dbSaveSector(sector);
+          await loadSectors();
+        });
+      });
+
+      const delSec = card.querySelector('[data-del-sector]');
+      if (delSec) {
+        delSec.addEventListener('click', async () => {
+          if (!confirm('Удалить сектор целиком?')) return;
+          await dbDeleteSector(sector.id);
+          await loadSectors();
+        });
+      }
+    });
+  }
+
+  btnAdd.addEventListener('click', async () => {
+    if (!isAdmin()) return;
+    const sector = { id: uid(), title: '', variants: [], created: Date.now() };
+    sectors.unshift(sector);
+    await dbSaveSector(sector);
+    await loadSectors();
+  });
+
+  loadSectors();
 })();
 </script>
-<script src="auth.js"></script>
 </body>
 </html>

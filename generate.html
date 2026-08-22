@@ -518,6 +518,21 @@ window.MathJax = {
   // mode=variant — полный вариант; mode=practice — выбранные задания
   const pageMode = urlParams.get('mode') || 'variant';
   const practiceMode = pageMode === 'practice';
+  const urlNumbersRaw = urlParams.get('numbers') || '';
+  const urlNumbers = urlNumbersRaw
+    ? urlNumbersRaw.split(',').map(s => s.trim()).filter(Boolean)
+    : null;
+  const urlSeqsRaw = urlParams.get('seqs') || '';
+  let urlSeqs = urlSeqsRaw
+    ? urlSeqsRaw.split(',').map(s => s.trim()).filter(Boolean)
+    : null;
+  if (!urlSeqs) {
+    try {
+      const st = sessionStorage.getItem('sector_variant_seqs');
+      if (st) urlSeqs = JSON.parse(st);
+    } catch(e) {}
+  }
+
 
   const titles = {
     oge: 'Вариант — Информатика ОГЭ',
@@ -532,6 +547,16 @@ window.MathJax = {
   document.title = titleText;
 
   let variantCode = null;
+  function getSectorVariantName() {
+    try {
+      // только если открыт вариант из сектора (есть seqs в URL или session для текущего захода)
+      const hasUrlSeqs = typeof urlSeqs !== 'undefined' && urlSeqs && urlSeqs.length;
+      if (!hasUrlSeqs) return '';
+      return sessionStorage.getItem('sector_variant_name') || '';
+    } catch (e) {}
+    return '';
+  }
+
   function ensureVariantCode(forceNew) {
     if (practiceMode) return null;
     if (forceNew || variantCode == null) {
@@ -539,16 +564,37 @@ window.MathJax = {
     }
     const el = document.getElementById('pageTitle');
     if (el) {
-      const subj = exam === 'oge' ? 'Информатика ОГЭ' : 'Информатика ЕГЭ';
-      el.textContent = 'Вариант № ' + variantCode + ' — ' + subj;
+      const sectorName = getSectorVariantName();
+      if (sectorName) {
+        // Добавленный вариант сектора — только название
+        el.textContent = sectorName;
+      } else {
+        const subj = exam === 'oge' ? 'Информатика ОГЭ' : 'Информатика ЕГЭ';
+        el.textContent = 'Вариант № ' + variantCode + ' — ' + subj;
+      }
       document.title = el.textContent;
     }
     return variantCode;
   }
-  if (!practiceMode) ensureVariantCode(true);
+  if (!practiceMode) {
+    try {
+      if (!(urlSeqs && urlSeqs.length)) {
+        sessionStorage.removeItem('sector_variant_seqs');
+        sessionStorage.removeItem('sector_variant_name');
+      }
+    } catch(e){}
+    ensureVariantCode(true);
+  }
   document.getElementById('backSubject').href = 'subject.html?exam=' + exam;
   document.getElementById('backSubject').textContent = exam === 'oge' ? '← Информатика ОГЭ' : '← Информатика ЕГЭ';
   document.getElementById('bankLink').href = 'bank.html?exam=' + exam;
+  // Вариант из сектора — без «Банк заданий» и «Сгенерировать»
+  if (urlSeqs && urlSeqs.length) {
+    const bl = document.getElementById('bankLink');
+    const bg = document.getElementById('btnGenerate');
+    if (bl) bl.style.display = 'none';
+    if (bg) bg.style.display = 'none';
+  }
   document.getElementById('pageHint').textContent = '';
   document.getElementById('pageHint').style.display = 'none';
   let practiceTypes = null;
@@ -1195,8 +1241,53 @@ window.MathJax = {
       }
     } else if (typeof practiceMode !== 'undefined' && practiceMode && practiceTypes && !practiceTypes.length) {
       slots = [];
+    } else if (typeof urlNumbers !== 'undefined' && urlNumbers && urlNumbers.length && !practiceMode) {
+      slots = urlNumbers.slice();
     } else {
       slots = full.slice();
+    }
+
+    // Режим сектора: порядковые номера (seq) из банка
+    if (typeof urlSeqs !== 'undefined' && urlSeqs && urlSeqs.length && !practiceMode) {
+      const bySeq = {};
+      all.forEach(t => {
+        if (t && t.seq != null) bySeq[String(t.seq)] = t;
+      });
+      const variant = [];
+      urlSeqs.forEach((seqStr, idx) => {
+        if (!seqStr) return;
+        const t = bySeq[String(seqStr)];
+        if (!t) {
+          variant.push({
+            _missing: true,
+            _slotLabel: String(idx + 1),
+            number: String(idx + 1),
+            seq: seqStr,
+            text: '',
+            code: ''
+          });
+          return;
+        }
+        const label = t.number != null ? String(t.number) : String(idx + 1);
+        variant.push({
+          ...t,
+          text: t.text,
+          _slotLabel: label,
+          _slotIndex: idx
+        });
+      });
+      status.textContent = '';
+      status.style.display = 'none';
+      if (!variant.length) {
+        status.style.display = 'block';
+        status.textContent = 'Нет заданий с указанными порядковыми номерами.';
+      }
+      // заголовок с именем варианта сектора
+      try {
+        if (!practiceMode) ensureVariantCode(false);
+      } catch(e) {}
+      renderVariant(variant);
+      return;
     }
 
     const variant = [];
@@ -1243,7 +1334,15 @@ window.MathJax = {
       status.style.display = 'block';
       status.textContent = 'Нет заданий для генерации. Добавьте задания в банк.';
     }
-    if (!practiceMode) ensureVariantCode(true);
+    if (!practiceMode) {
+    try {
+      if (!(urlSeqs && urlSeqs.length)) {
+        sessionStorage.removeItem('sector_variant_seqs');
+        sessionStorage.removeItem('sector_variant_name');
+      }
+    } catch(e){}
+    ensureVariantCode(true);
+  }
     renderVariant(variant);
   }
 
@@ -1588,6 +1687,7 @@ window.MathJax = {
         primary: primary,
         primaryMax: primaryMax,
         variantCode: variantCode || ensureVariantCode(false),
+        sectorName: (function(){ try { return getSectorVariantName() || ''; } catch(e){ return ''; } })(),
         rows: rowData
       }));
       if (typeof persistVariantState === 'function') persistVariantState();

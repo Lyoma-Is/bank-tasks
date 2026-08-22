@@ -353,7 +353,15 @@ window.MathJax = {
         var add = document.getElementById('addLink');
         if (add) add.href = 'add.html?exam=' + exam;
         var gen = document.getElementById('genLink');
-        if (gen) gen.href = 'generate.html?exam=' + exam + '&mode=variant';
+        if (gen) {
+          gen.href = 'generate.html?exam=' + exam + '&mode=variant';
+          gen.addEventListener('click', function() {
+            try {
+              sessionStorage.removeItem('sector_variant_seqs');
+              sessionStorage.removeItem('sector_variant_name');
+            } catch(e){}
+          });
+        }
         var sub = document.getElementById('backSubject');
         if (sub) { sub.href = 'subject.html?exam=' + exam; sub.textContent = exam === 'oge' ? '← Информатика ОГЭ' : '← Информатика ЕГЭ'; }
       });

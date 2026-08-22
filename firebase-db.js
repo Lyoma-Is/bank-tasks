@@ -320,3 +320,48 @@ async function dbAddDeletedSeq(seq) {
   localStorage.setItem(key, JSON.stringify(list));
   return true;
 }
+
+
+// ——— Секторы и варианты ———
+async function dbFetchSectors() {
+  if (!isFirebaseReady()) {
+    try { return JSON.parse(localStorage.getItem(lsKey('bank_sectors')) || '[]'); } catch(e) { return []; }
+  }
+  try {
+    const snap = await getFirebaseDb().ref(examPrefix() + '/sectors').once('value');
+    const v = snap.val();
+    if (!v) return [];
+    if (Array.isArray(v)) return v.filter(Boolean);
+    return Object.keys(v).map(k => ({ id: k, ...v[k] })).sort((a,b) => (b.created||0) - (a.created||0));
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
+}
+
+async function dbSaveSector(sector) {
+  if (!sector || !sector.id) throw new Error('no sector id');
+  if (!isFirebaseReady()) {
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(lsKey('bank_sectors')) || '[]'); } catch(e) {}
+    const i = list.findIndex(s => s.id === sector.id);
+    if (i >= 0) list[i] = sector; else list.push(sector);
+    localStorage.setItem(lsKey('bank_sectors'), JSON.stringify(list));
+    return sector;
+  }
+  const row = { ...sector };
+  await getFirebaseDb().ref(examPrefix() + '/sectors/' + sector.id).set(row);
+  return row;
+}
+
+async function dbDeleteSector(id) {
+  if (!id) return;
+  if (!isFirebaseReady()) {
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(lsKey('bank_sectors')) || '[]'); } catch(e) {}
+    list = list.filter(s => s.id !== id);
+    localStorage.setItem(lsKey('bank_sectors'), JSON.stringify(list));
+    return;
+  }
+  await getFirebaseDb().ref(examPrefix() + '/sectors/' + id).remove();
+}

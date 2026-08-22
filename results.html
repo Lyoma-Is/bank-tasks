@@ -237,7 +237,9 @@
     scoreHtml = '<div class="results-score">Результат: ' + data.correct + ' из ' + data.total + '</div>';
   }
 
-  if (data.variantCode != null && data.variantCode !== '') {
+  if (data.sectorName) {
+    scoreHtml += '<div class="variant-code-head">' + escapeHtml(String(data.sectorName)) + '</div>';
+  } else if (data.variantCode != null && data.variantCode !== '') {
     scoreHtml += '<div class="variant-code-head">Вариант № ' + data.variantCode + '</div>';
   }
 

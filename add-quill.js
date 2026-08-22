@@ -47,6 +47,17 @@
     }catch(e){ return null; }
   }
 
+
+  function registerFontSizes(){
+    if(typeof Quill === 'undefined' || Quill.__sizesReady) return;
+    try{
+      const Size = Quill.import('attributors/style/size');
+      Size.whitelist = ['14px','15px','16px','17px','18px','19px','20px','21px','22px','23px','24px','25px','26px','27px','28px','29px','30px','31px','32px','33px','34px','35px','36px','37px','38px','39px','40px'];
+      Quill.register(Size, true);
+      Quill.__sizesReady = true;
+    }catch(e){ console.warn('size register', e); }
+  }
+
   function ensureTableBlot(){
     if(typeof Quill === 'undefined' || Quill.__tableBlotReady) return;
     try{
@@ -189,11 +200,32 @@
     }catch(e){ console.error(e); }
   }
 
-  function buildTableHtml(rows, cols, colors){
+  function getModalBorder(){
+    const w = document.getElementById('tblBorderWidth');
+    const s = document.getElementById('tblBorderStyle');
+    const c = document.getElementById('tblBorderColor');
+    const width = w ? parseInt(w.value, 10) : 1;
+    const style = s ? s.value : 'solid';
+    const color = c ? c.value : '#000000';
+    if (!width || width <= 0) return 'none';
+    return width + 'px ' + style + ' ' + color;
+  }
+
+  function applyTableBorders(tableEl, borderCss){
+    if (!tableEl) return;
+    const b = borderCss != null ? borderCss : getModalBorder();
+    tableEl.style.borderCollapse = 'collapse';
+    tableEl.querySelectorAll('td, th').forEach(cell => {
+      cell.style.border = b;
+    });
+  }
+
+  function buildTableHtml(rows, cols, colors, borderCss){
     rows = Math.max(1, Math.min(20, rows|0));
     cols = Math.max(1, Math.min(12, cols|0));
     colors = colors || {};
-    let html = '<table><tbody>';
+    const border = borderCss != null ? borderCss : getModalBorder();
+    let html = '<table style="border-collapse:collapse"><tbody>';
     for(let r=0;r<rows;r++){
       html += '<tr>';
       for(let c=0;c<cols;c++){
@@ -201,7 +233,7 @@
         if(colors.col && c===0) bg = colors.col;
         if(colors.row && r===0) bg = colors.row;
         if(colors.diag && r===c) bg = colors.diag;
-        const style = 'text-align:center;vertical-align:middle;'+(bg?'background-color:'+bg+';':'');
+        const style = 'text-align:center;vertical-align:middle;border:'+border+';'+(bg?'background-color:'+bg+';':'');
         const paint = bg ? ' data-tbl-paint="1"' : '';
         html += '<td style="'+style+'" contenteditable="true"'+paint+'><br></td>';
       }
@@ -250,6 +282,19 @@
     }
   }
 
+  function findFocusedTableCell(){
+    const sel = window.getSelection();
+    if(sel && sel.anchorNode){
+      const el = sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement;
+      if(el){
+        const cell = el.closest && el.closest('td, th');
+        if(cell && cell.closest('.ql-table-wrap, .ql-editor table')) return cell;
+      }
+    }
+    const active = document.activeElement;
+    if(active && (active.tagName === 'TD' || active.tagName === 'TH')) return active;
+    return null;
+  }
   function findFocusedTableWrap(){
     if(!quill) return null;
     const sel = quill.getSelection(true);
@@ -289,6 +334,8 @@
     document.getElementById('modalOk').textContent=modalMode==='paint'?'Применить':'Вставить';
     document.getElementById('sizeFields').style.display=modalMode==='paint'?'none':'flex';
     document.getElementById('alignBlock').style.display=modalMode==='paint'?'none':'block';
+    const bb = document.getElementById('borderBlock');
+    if (bb) bb.style.display = 'block';
     tableModal.classList.add('open');
   }
   function closeTableModal(){ tableModal.classList.remove('open'); }
@@ -305,17 +352,19 @@
 
   document.getElementById('modalOk').onclick=()=>{
     const colors=getModalColors();
+    const borderCss=getModalBorder();
     if(modalMode==='paint'){
       const wrap=findFocusedTableWrap();
       if(!wrap){ alert('Сначала кликните по ячейке таблицы'); return; }
       const table=wrap.querySelector('table');
+      applyTableBorders(table, borderCss);
       if(table) applyTableColors(table, colors);
       closeTableModal(); return;
     }
     const rows=Math.min(20,Math.max(1,parseInt(document.getElementById('modalRows').value,10)||3));
     const cols=Math.min(12,Math.max(1,parseInt(document.getElementById('modalCols').value,10)||3));
     const align=document.querySelector('input[name=tableAlign]:checked').value;
-    const tableHtml=buildTableHtml(rows,cols,colors);
+    const tableHtml=buildTableHtml(rows,cols,colors,borderCss);
     const before=quill.getSelection(true);
     const idx=before?before.index:Math.max(0,quill.getLength()-1);
     try{quill.focus();}catch(e){}
@@ -335,6 +384,7 @@
     if(ed) ed.innerHTML='<p style="color:#b91c1c;padding:12px">Ошибка: редактор Quill не загрузился. Проверьте интернет / CDN.</p>';
   } else {
     try { ensureTableBlot(); } catch(e){ console.error('TableBlot', e); }
+    try { registerFontSizes(); } catch(e){ console.error('sizes', e); }
     try {
       quill=new Quill('#editor',{
         theme:'snow',
@@ -343,6 +393,7 @@
           toolbar:{
             container:[
               [{header:[1,2,3,false]}],
+              [{size: ['14px','15px','16px','17px','18px','19px','20px','21px','22px','23px','24px','25px','26px','27px','28px','29px','30px','31px','32px','33px','34px','35px','36px','37px','38px','39px','40px']}],
               ['bold','italic','underline','strike'],
               [{script:'sub'},{script:'super'}],
               [{list:'ordered'},{list:'bullet'}],
@@ -354,9 +405,26 @@
               ['clean']
             ],
             handlers:{
+              size:function(value){
+                const cell = findFocusedTableCell();
+                const wrap = cell ? cell.closest('.ql-table-wrap') : findFocusedTableWrap();
+                if(wrap){
+                  // размер для всех ячеек таблицы
+                  wrap.querySelectorAll('td, th').forEach(td => {
+                    if(value) td.style.fontSize = value;
+                    else td.style.fontSize = '';
+                  });
+                  return;
+                }
+                this.quill.format('size', value || false);
+              },
               align:function(value){
                 const wrap=findFocusedTableWrap();
                 if(wrap) setTableAlign(wrap, value);
+                const cell = findFocusedTableCell();
+                if(cell && value){
+                  cell.style.textAlign = value || 'center';
+                }
                 this.quill.format('align', value||false);
               },
               table:function(){ openTableModal('insert'); },
@@ -418,6 +486,7 @@
     const solEl = document.getElementById('solutionEditor');
     if(solEl){
       try {
+        try { registerFontSizes(); } catch(e){}
         quillSolution = new Quill('#solutionEditor', {
           theme: 'snow',
           placeholder: 'Ход решения, пояснения…',
@@ -426,6 +495,7 @@
               ['bold', 'italic', 'underline'],
               [{ script: 'sub' }, { script: 'super' }],
               [{ list: 'ordered' }, { list: 'bullet' }],
+              [{ size: ['14px','15px','16px','17px','18px','19px','20px','21px','22px','23px','24px','25px','26px','27px','28px','29px','30px','31px','32px','33px','34px','35px','36px','37px','38px','39px','40px'] }],
               [{ align: [] }],
               [{ color: [] }, { background: [] }],
               ['link', 'image'],
